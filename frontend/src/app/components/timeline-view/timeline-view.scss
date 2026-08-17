@@ -1,3 +1,5 @@
+@use '../../../styles/shared' as shared;
+
 :host {
   display: block;
   height: 100%;
@@ -9,19 +11,20 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: var(--bg-raised);
+  background: var(--bg);
 }
 
 .timeline-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border);
 
   h2 {
     font-size: 15px;
+    margin-top: 2px;
   }
 }
 
@@ -29,7 +32,7 @@
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
 
   .field {
@@ -42,20 +45,21 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   font-size: 12px;
-  background: var(--player-soft);
+  background: var(--gold-soft);
   border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
 
   strong {
-    color: var(--player);
+    color: var(--gold);
   }
 }
 
 .hidden-note,
 .load-error {
   margin: 0;
-  padding: 7px 14px;
+  padding: 7px 16px;
   font-size: 11px;
   color: var(--text-faint);
   border-bottom: 1px solid var(--border);
@@ -65,9 +69,9 @@
   display: flex;
   flex-direction: column;
   gap: 9px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--panel);
+  background: var(--bg-raised);
 }
 
 .add-row {
@@ -88,44 +92,41 @@
 }
 
 /* ── The spine ───────────────────────────────────────────────────────────── */
-.spine {
+.spine-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 0 20px;
+  padding-bottom: 24px;
 }
 
 .era {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   margin: 0;
-  padding: 7px 14px;
+  padding: 8px 16px;
   font-size: 10px;
+  font-family: var(--font);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--text-faint);
-  background: var(--bg-raised);
+  color: var(--gold);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
+}
+
+/* The vertical rule the markers sit on. */
+.spine {
+  border-left: 2px solid var(--border-strong);
+  margin-left: 33px;
+  padding: 6px 0;
 }
 
 .event {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 4px;
-  padding: 0 8px 0 14px;
-  position: relative;
-
-  /* The vertical rule the year markers sit on. */
-  &::before {
-    content: '';
-    position: absolute;
-    left: 47px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--border);
-  }
+  padding-right: 8px;
+  border-radius: var(--radius);
 
   &:hover {
     background: var(--panel);
@@ -134,62 +135,68 @@
 
 .event-main {
   display: flex;
+  align-items: flex-start;
   gap: 12px;
   flex: 1;
   min-width: 0;
   text-align: left;
   background: none;
   border: none;
-  padding: 9px 0;
+  padding: 8px 0;
+  /* Pull the marker back so it straddles the spine. */
+  margin-left: -18px;
+  color: inherit;
 }
 
-.year {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 34px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  padding-top: 1px;
+.marker {
+  --type-color: #3d6ea8;
+
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--type-color);
+  /* Icons are dark-on-colour, as in the prototype. */
+  color: var(--bg);
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  padding-left: 8px;
 }
 
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+.year {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.hidden-flag {
+  color: var(--inlaw-note);
 }
 
 .title {
   font-size: 13px;
   font-weight: 500;
-}
-
-.type {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
+  color: var(--text);
 }
 
 .desc {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-faint);
+  margin-top: 2px;
 }
 
 .people {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 3px;
+  margin-top: 5px;
 }
 
 .person-chip {
@@ -197,25 +204,15 @@
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--panel-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   color: var(--text-muted);
-}
-
-.badge-redacted {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: var(--redacted-soft);
-  border: 1px solid var(--redacted);
-  color: var(--redacted);
 }
 
 .event-actions {
   display: flex;
   align-items: center;
   gap: 3px;
+  padding-top: 10px;
   opacity: 0;
   transition: opacity 0.12s;
 }
@@ -225,19 +222,47 @@
   opacity: 1;
 }
 
-/* ── States ──────────────────────────────────────────────────────────────── */
-.event.is-selected {
-  background: var(--player-soft);
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 3px;
+  color: var(--text-faint);
 
-  .title {
-    color: var(--player);
+  &:hover {
+    border-color: var(--gold);
+    color: var(--text);
   }
 }
 
+.icon-btn-danger:hover {
+  border-color: var(--gm);
+  color: var(--secret);
+}
+
+/* ── States ──────────────────────────────────────────────────────────────── */
+.event.is-selected {
+  background: var(--panel-2);
+
+  .title {
+    color: var(--gold);
+  }
+}
+
+/* Redacted marker: hatched and dashed, matching the person card. */
 .event.is-hidden-record {
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgba(180, 84, 79, 0.08) 0 6px,
-    transparent 6px 12px
-  );
+  .marker {
+    @include shared.redacted-hatch;
+
+    background-color: var(--panel);
+    border: 1px dashed var(--redacted-border);
+    color: var(--inlaw-note);
+  }
+
+  .title {
+    color: var(--inlaw-note);
+  }
 }

@@ -1,41 +1,59 @@
 <div class="filter-bar">
-  <div class="field">
-    <label for="filter-nation">Nation</label>
-    <select
-      id="filter-nation"
-      [value]="filter().nation ?? ''"
-      (change)="onNationChange($any($event.target).value)"
-    >
-      <option value="">All nations</option>
+  <div class="group">
+    <div class="group-label">Nation</div>
+    <div class="chips">
+      <button
+        type="button"
+        class="chip-btn"
+        [class.active]="filter().nation === null"
+        (click)="onNationChange('')"
+      >
+        All
+      </button>
       @for (nation of nations(); track nation) {
-        <option [value]="nation">{{ nation }}</option>
+        <button
+          type="button"
+          class="chip-btn"
+          [class.active]="filter().nation === nation"
+          (click)="onNationChange(nation)"
+        >
+          {{ nation }}
+        </button>
       }
-    </select>
+    </div>
   </div>
 
-  <div class="field">
-    <label for="filter-house">House</label>
-    <select
-      id="filter-house"
-      [value]="filter().house ?? ''"
-      (change)="onHouseChange($any($event.target).value)"
-    >
-      <option value="">All houses</option>
+  <div class="group">
+    <div class="group-label">House</div>
+    <div class="chips">
+      <button
+        type="button"
+        class="chip-btn"
+        [class.active]="filter().house === null"
+        (click)="onHouseChange('')"
+      >
+        All
+      </button>
       @for (house of houses(); track house) {
-        <option [value]="house">{{ house }}</option>
+        <button
+          type="button"
+          class="chip-btn house-chip"
+          [class.active]="filter().house === house"
+          [style.--house]="colorFor(house)"
+          (click)="onHouseChange(house)"
+        >
+          <span class="house-dot"></span>
+          {{ house }}
+        </button>
       }
-    </select>
+    </div>
   </div>
-
-  <button type="button" class="btn" [disabled]="!isFiltered()" (click)="onClear()">
-    Clear filter
-  </button>
 
   <p class="counts">
     @if (isFiltered()) {
       <span class="count-core">{{ coreCount() }} in focus</span>
       @if (adjacentCount() > 0) {
-        <span class="count-adjacent">+ {{ adjacentCount() }} connected by marriage or blood</span>
+        <span class="count-adjacent">+ {{ adjacentCount() }} married in or blood-linked</span>
       }
     } @else {
       <span class="count-core">{{ totalCount() }} people</span>

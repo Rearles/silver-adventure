@@ -1,43 +1,32 @@
 <header class="app-header">
   <div class="brand">
-    <h1>Dynasty Tracker</h1>
-    <span class="world">{{ world() }}</span>
-  </div>
-
-  <div class="mode-switch" role="group" aria-label="View mode">
-    <button
-      type="button"
-      class="mode-btn"
-      [class.active]="isGmView()"
-      [attr.aria-pressed]="isGmView()"
-      (click)="onSetMode('gm')"
-    >
-      GM View
-    </button>
-    <button
-      type="button"
-      class="mode-btn"
-      [class.active]="isPlayerPreview()"
-      [attr.aria-pressed]="isPlayerPreview()"
-      (click)="onSetMode('player')"
-    >
-      Player Preview
-    </button>
+    <div class="eyebrow">{{ eyebrow() }}</div>
+    <h1>{{ ledgerTitle() }}</h1>
   </div>
 
   <div class="header-actions">
     @if (isGmView()) {
-      <span class="hidden-count" title="People hidden from players">
-        {{ hiddenPeopleCount() }} hidden
-      </span>
+      @if (hiddenPeopleCount() > 0) {
+        <span class="hidden-count" title="People hidden from players">
+          {{ hiddenPeopleCount() }} hidden
+        </span>
+      }
       <button type="button" class="btn" (click)="onAddPerson()">+ Person</button>
       <button type="button" class="btn" [disabled]="!dirty()" (click)="onRevert()">Revert</button>
-      <button type="button" class="btn btn-primary" (click)="onSaveWorld()">
+      <button type="button" class="btn" (click)="onSaveWorld()">
         Save{{ dirty() ? ' *' : '' }}
       </button>
-    } @else {
-      <span class="player-note">Projecting to players — hidden records and GM notes excluded</span>
     }
+
+    <button
+      type="button"
+      class="mode-toggle"
+      [attr.aria-pressed]="isGmView()"
+      (click)="onToggleMode()"
+    >
+      <lucide-icon [img]="isGmView() ? EyeIcon : EyeOffIcon" [size]="15" />
+      {{ isGmView() ? 'GM View — everything visible' : 'Player Preview — what they see' }}
+    </button>
   </div>
 </header>
 
@@ -69,6 +58,25 @@
     <app-timeline-view />
   </aside>
 </main>
+
+<footer class="legend">
+  @if (isGmView()) {
+    <div>
+      <lucide-icon [img]="EyeIcon" [size]="11" />
+      Toggle a person's eye to hide them entirely from players.
+    </div>
+    <div>
+      <span class="legend-swatch legend-lock">⚿</span>
+      Lock a known person's parentage to hide <em>who their parents are</em> — they stay on
+      the tree, the line doesn't.
+    </div>
+  } @else {
+    <div>
+      Player Preview: hidden records, rumoured parentage lines, and every GM dossier are
+      absent from this view — there is nothing here to reveal by accident.
+    </div>
+  }
+</footer>
 
 <!-- GM-only surfaces. In Player Preview these are not instantiated at all, so
      neither the dossier component nor any gmNotes value reaches the DOM. -->

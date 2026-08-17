@@ -1,6 +1,9 @@
 <section class="timeline">
   <header class="timeline-header">
-    <h2>Timeline</h2>
+    <div>
+      <div class="eyebrow">Timeline</div>
+      <h2>{{ events().length }} event{{ events().length === 1 ? '' : 's' }}</h2>
+    </div>
     @if (isGmView()) {
       <button type="button" class="btn btn-sm" (click)="onToggleAddForm()">
         {{ showAddForm() ? 'Cancel' : '+ Event' }}
@@ -35,7 +38,7 @@
       [disabled]="yearRange().from === null && yearRange().to === null"
       (click)="onClearYears()"
     >
-      Clear years
+      Clear
     </button>
   </div>
 
@@ -110,63 +113,76 @@
     </form>
   }
 
-  <div class="spine">
+  <div class="spine-scroll">
     @if (events().length === 0) {
       <p class="empty-state">No events match the current filters.</p>
     } @else {
       @for (group of grouped(); track group.era + group.events[0].id) {
         <h3 class="era">{{ group.era }}</h3>
-        @for (event of group.events; track event.id) {
-          <article
-            class="event"
-            [class.is-selected]="selectedEventId() === event.id"
-            [class.is-hidden-record]="event.visibility === 'hidden'"
-          >
-            <button type="button" class="event-main" (click)="onSelectEvent(event)">
-              <span class="year">{{ event.year }}</span>
-              <span class="body">
-                <span class="title-row">
-                  <span class="title">{{ event.title }}</span>
-                  @if (event.visibility === 'hidden') {
-                    <span class="badge-redacted">REDACTED</span>
-                  }
+        <div class="spine">
+          @for (event of group.events; track event.id) {
+            <article
+              class="event"
+              [class.is-selected]="selectedEventId() === event.id"
+              [class.is-hidden-record]="event.visibility === 'hidden'"
+            >
+              <button type="button" class="event-main" (click)="onSelectEvent(event)">
+                <span
+                  class="marker"
+                  [style.--type-color]="colorFor(event.type)"
+                  aria-hidden="true"
+                >
+                  <lucide-icon [img]="iconFor(event.type)" [size]="15" />
                 </span>
-                <span class="type">{{ event.type }}</span>
-                @if (event.description) {
-                  <span class="desc">{{ event.description }}</span>
-                }
-                @if (event.relatedPersonIds.length > 0) {
-                  <span class="people">
-                    @for (personId of event.relatedPersonIds; track personId) {
-                      <span class="person-chip">{{ nameFor(personId) }}</span>
+                <span class="body">
+                  <span class="year">
+                    {{ event.year }}
+                    @if (isGmView() && event.visibility === 'hidden') {
+                      <span class="hidden-flag">· hidden from players</span>
                     }
                   </span>
-                }
-              </span>
-            </button>
+                  <span class="title">{{ event.title }}</span>
+                  @if (event.description) {
+                    <span class="desc">{{ event.description }}</span>
+                  }
+                  @if (event.relatedPersonIds.length > 0) {
+                    <span class="people">
+                      @for (personId of event.relatedPersonIds; track personId) {
+                        <span class="person-chip">{{ nameFor(personId) }}</span>
+                      }
+                    </span>
+                  }
+                </span>
+              </button>
 
-            @if (isGmView()) {
-              <div class="event-actions">
-                <button
-                  type="button"
-                  class="btn btn-sm"
-                  [title]="event.visibility === 'hidden' ? 'Reveal to players' : 'Hide from players'"
-                  (click)="onToggleVisibility(event)"
-                >
-                  {{ event.visibility === 'hidden' ? '◌' : '👁' }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger"
-                  title="Delete event"
-                  (click)="onDelete(event)"
-                >
-                  ✕
-                </button>
-              </div>
-            }
-          </article>
-        }
+              @if (isGmView()) {
+                <div class="event-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    [title]="
+                      event.visibility === 'hidden' ? 'Reveal to players' : 'Hide from players'
+                    "
+                    (click)="onToggleVisibility(event)"
+                  >
+                    <lucide-icon
+                      [img]="event.visibility === 'hidden' ? EyeOffIcon : EyeIcon"
+                      [size]="13"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn-danger"
+                    title="Delete event"
+                    (click)="onDelete(event)"
+                  >
+                    <lucide-icon [img]="TrashIcon" [size]="13" />
+                  </button>
+                </div>
+              }
+            </article>
+          }
+        </div>
       }
     }
   </div>

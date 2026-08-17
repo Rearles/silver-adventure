@@ -110,11 +110,10 @@ function clickByTitle(root: HTMLElement, title: string): boolean {
   return true;
 }
 
-function clickByText(root: HTMLElement, text: string): boolean {
-  const button = [...root.querySelectorAll('button')].find(
-    (candidate) => candidate.textContent?.trim() === text,
-  );
-  if (button === undefined) return false;
+/** Clicks the single GM/Player mode toggle in the header. */
+function toggleMode(root: HTMLElement): boolean {
+  const button = root.querySelector<HTMLButtonElement>('button.mode-toggle');
+  if (button === null) return false;
   button.click();
   return true;
 }
@@ -130,7 +129,7 @@ describe('App', () => {
     const fixture = await createApp();
     const root = fixture.nativeElement as HTMLElement;
 
-    expect(root.querySelector('h1')?.textContent).toContain('Dynasty Tracker');
+    expect(root.querySelector('h1')?.textContent).toContain('Dynasty Ledger');
     expect(root.textContent).toContain('Rowan Valcrest');
   });
 
@@ -139,19 +138,19 @@ describe('App', () => {
     const root = fixture.nativeElement as HTMLElement;
 
     expect(root.textContent).toContain(HIDDEN_NAME);
-    expect(root.textContent).toContain('REDACTED');
+    expect(root.querySelectorAll('.note-redacted').length).toBeGreaterThan(0);
   });
 
   it('removes hidden people entirely in Player Preview', async () => {
     const fixture = await createApp();
     const root = fixture.nativeElement as HTMLElement;
 
-    expect(clickByText(root, 'Player Preview')).toBe(true);
+    expect(toggleMode(root)).toBe(true);
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(root.textContent).not.toContain(HIDDEN_NAME);
-    expect(root.textContent).not.toContain('REDACTED');
+    expect(root.querySelectorAll('.note-redacted').length).toBe(0);
     // The known people are still on the chart.
     expect(root.textContent).toContain('Rowan Valcrest');
     expect(root.textContent).toContain('Corin Ashfell');
@@ -163,7 +162,7 @@ describe('App', () => {
 
     expect(root.textContent).toContain(HIDDEN_EVENT);
 
-    clickByText(root, 'Player Preview');
+    toggleMode(root);
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -197,7 +196,7 @@ describe('App', () => {
     fixture.detectChanges();
     expect(root.querySelector('app-gm-dossier')).not.toBeNull();
 
-    clickByText(root, 'Player Preview');
+    toggleMode(root);
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -219,7 +218,7 @@ describe('App', () => {
 
     expect(root.querySelector('button[title="GM dossier"]')).not.toBeNull();
 
-    clickByText(root, 'Player Preview');
+    toggleMode(root);
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -233,15 +232,53 @@ describe('App', () => {
     const root = fixture.nativeElement as HTMLElement;
 
     // GM View marks Corin's concealed parentage so the GM can see the state.
-    expect(root.querySelectorAll('.badge-parentage').length).toBe(1);
+    expect(root.querySelectorAll('.note-parentage').length).toBe(1);
 
-    clickByText(root, 'Player Preview');
+    toggleMode(root);
     await fixture.whenStable();
     fixture.detectChanges();
 
     // In Player Preview the badge would itself reveal whose parentage is secret.
-    expect(root.querySelectorAll('.badge-parentage').length).toBe(0);
+    expect(root.querySelectorAll('.note-parentage').length).toBe(0);
     expect(root.textContent).toContain('Corin Ashfell');
+  });
+
+  it('colours each card by house and dims in-married cards', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    const valcrest = [...root.querySelectorAll('app-person-card')].find((card) =>
+      card.textContent?.includes('Rowan Valcrest'),
+    );
+    const body = valcrest?.querySelector<HTMLElement>('.card-body');
+
+    expect(body?.style.getPropertyValue('--house')).toBe('#a3435a');
+  });
+
+  it('dims people an event does not involve, and clears the dimming again', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    // Nothing selected: nothing dimmed.
+    expect(root.querySelectorAll('app-person-card.is-dimmed').length).toBe(0);
+
+    const coronation = [...root.querySelectorAll<HTMLButtonElement>('.event-main')].find(
+      (button) => button.textContent?.includes('Coronation of Rowan'),
+    );
+    coronation?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // The coronation involves p1 only, so the other two cards dim back.
+    expect(root.querySelectorAll('app-person-card.is-highlighted').length).toBe(1);
+    expect(root.querySelectorAll('app-person-card.is-dimmed').length).toBe(2);
+
+    // Clicking the same event again clears the selection.
+    coronation?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root.querySelectorAll('app-person-card.is-dimmed').length).toBe(0);
   });
 
   it('drops the rumoured parentage connector in Player Preview', async () => {
@@ -251,7 +288,7 @@ describe('App', () => {
     // Corin has hideParentage, so GM View draws a dashed "rumoured" link.
     expect(root.querySelectorAll('path.link-rumoured').length).toBe(1);
 
-    clickByText(root, 'Player Preview');
+    toggleMode(root);
     await fixture.whenStable();
     fixture.detectChanges();
 

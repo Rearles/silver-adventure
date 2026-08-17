@@ -51,16 +51,32 @@ export class TreeView {
       const host = this.scroller()?.nativeElement;
       if (target === undefined || host === undefined) return;
 
-      host.scrollTo({
-        left: target.x + target.width / 2 - host.clientWidth / 2,
-        top: target.y + target.height / 2 - host.clientHeight / 2,
-        behavior: 'smooth',
-      });
+      const left = target.x + target.width / 2 - host.clientWidth / 2;
+      const top = target.y + target.height / 2 - host.clientHeight / 2;
+
+      // This runs inside change detection, so it must not throw where
+      // Element.scrollTo is missing (jsdom, older browsers) — fall back to
+      // setting the scroll offsets directly.
+      if (typeof host.scrollTo === 'function') {
+        host.scrollTo({ left, top, behavior: 'smooth' });
+      } else {
+        host.scrollLeft = left;
+        host.scrollTop = top;
+      }
     });
   }
 
   isHighlighted(personId: string): boolean {
     return this.highlightedPersonIds().has(personId);
+  }
+
+  /**
+   * With an event selected, everyone it does not involve dims back, so the
+   * people it touches read immediately. No selection means no dimming.
+   */
+  isDimmed(personId: string): boolean {
+    const highlighted = this.highlightedPersonIds();
+    return highlighted.size > 0 && !highlighted.has(personId);
   }
 
   /** Clicking the selected person again clears the selection. */

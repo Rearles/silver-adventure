@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Eye, EyeOff, LucideAngularModule, Trash2, type LucideIconData } from 'lucide-angular';
 import {
   DYNASTY_EVENT_TYPES,
   type DynastyEvent,
@@ -9,6 +10,7 @@ import type { Visibility } from '../../models/person';
 import { TimelineDataService } from '../../services/timeline-data.service';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
+import { eventColor, eventIcon } from './event-visuals';
 
 interface EraGroup {
   era: string;
@@ -28,7 +30,7 @@ interface EraGroup {
  */
 @Component({
   selector: 'app-timeline-view',
-  imports: [ReactiveFormsModule],
+  imports: [LucideAngularModule, ReactiveFormsModule],
   templateUrl: './timeline-view.html',
   styleUrl: './timeline-view.scss',
 })
@@ -39,6 +41,17 @@ export class TimelineView {
   private readonly formBuilder = inject(FormBuilder);
 
   readonly eventTypes = DYNASTY_EVENT_TYPES;
+  readonly EyeIcon = Eye;
+  readonly EyeOffIcon = EyeOff;
+  readonly TrashIcon = Trash2;
+
+  iconFor(type: DynastyEventType): LucideIconData {
+    return eventIcon(type);
+  }
+
+  colorFor(type: DynastyEventType): string {
+    return eventColor(type);
+  }
 
   readonly isGmView = this.viewMode.isGmView;
   readonly selectedEventId = this.viewMode.selectedEventId;

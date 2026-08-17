@@ -8,13 +8,19 @@ import type { FilteredPerson, FilterTier } from './projection';
  * reasoned about on its own. The renderer just draws what this returns.
  */
 
-export const CARD_WIDTH = 172;
-export const CARD_HEIGHT = 76;
+/**
+ * Card metrics follow the reference prototype's proportions, widened from its
+ * 168px because this app puts four GM controls on a card where the prototype had
+ * two — at 168px names like "Yseult Thornwood" truncated.
+ */
+export const CARD_WIDTH = 196;
+/** Tall enough for name, title, house row, and one GM-only note line. */
+export const CARD_HEIGHT = 96;
 /** Gap between two spouses inside one marriage cluster. */
-export const SPOUSE_GAP = 26;
+export const SPOUSE_GAP = 18;
 /** Gap between neighbouring clusters in the same generation. */
-export const UNIT_GAP = 48;
-export const ROW_HEIGHT = 196;
+export const UNIT_GAP = 44;
+export const ROW_HEIGHT = 172;
 export const PADDING = 40;
 
 export interface TreeNode<T extends PersonLike> {

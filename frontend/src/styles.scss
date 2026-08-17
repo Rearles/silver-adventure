@@ -1,43 +1,53 @@
 /* Dynasty Tracker — global tokens and resets.
  *
- * Dark "GM console" palette: low-glare slate so the GM can read it in a dim room,
- * with an amber accent for the crown/succession language and a muted red reserved
- * exclusively for redacted (hidden) records. Player Preview shifts the accent to
- * a cool tone so it is impossible to mistake which mode is on screen.
+ * Palette ported from the reference prototype: a warm near-black ground with
+ * parchment cards, antique gold for headings and marriage lines, deep red for GM
+ * View and dark green for Player Preview. Person cards are light-on-dark, so a
+ * chart projected in a dim room reads like a printed genealogy rather than a
+ * glowing dashboard.
  */
 
 :root {
-  --bg: #13151a;
-  --bg-raised: #191d25;
-  --panel: #1e232c;
-  --panel-2: #242a35;
-  --border: #2d3440;
-  --border-strong: #3c4553;
+  --bg: #16140f;
+  --bg-raised: #1c1913;
+  --panel: #201d18;
+  --panel-2: #2a271f;
+  --border: #2a271f;
+  --border-strong: #3a362f;
 
-  --text: #e7e9ef;
-  --text-muted: #949cad;
-  --text-faint: #6d7486;
+  /* Parchment — the card surface, and the body text colour on the dark ground. */
+  --parchment: #ece2c6;
+  --ink: #2a2117;
 
-  --accent: #d8a94b;
-  --accent-soft: rgba(216, 169, 75, 0.14);
-  --accent-line: rgba(216, 169, 75, 0.5);
+  --text: #ece2c6;
+  --text-muted: #a39c8a;
+  --text-faint: #8a8272;
 
-  --player: #5fb3c4;
-  --player-soft: rgba(95, 179, 196, 0.14);
+  --gold: #b08d3e;
+  --gold-soft: rgba(176, 141, 62, 0.16);
 
-  --redacted: #b4544f;
-  --redacted-soft: rgba(180, 84, 79, 0.14);
+  /* Mode colours: GM red, player green. */
+  --gm: #7a2634;
+  --player: #2f3e33;
+  --player-line: #4a8577;
 
-  --alive: #6fae7a;
+  /* Redaction and secret-plot accents. */
+  --redacted-border: #55503f;
+  --redacted-ink: #8a8272;
+  --secret: #c17a8c;
+  --inlaw-note: #7a5b3f;
 
   --radius: 6px;
-  --radius-lg: 10px;
-  --shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-panel: 0 8px 30px rgba(0, 0, 0, 0.55);
 
-  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
+
+/* The redaction hatch lives in src/styles/_shared.scss, because component
+   stylesheets compile in isolation and cannot reach a mixin defined here. */
 
 * {
   box-sizing: border-box;
@@ -66,7 +76,14 @@ h4 {
   font-family: var(--font-display);
   font-weight: 600;
   margin: 0;
-  letter-spacing: 0.01em;
+}
+
+/* The small uppercase gold line that sits above a title. */
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
 
 button {
@@ -80,20 +97,19 @@ select,
 textarea {
   font: inherit;
   color: var(--text);
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
   padding: 6px 8px;
   width: 100%;
 
   &:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--gold);
     outline-offset: 1px;
-    border-color: var(--border-strong);
   }
 
   &::placeholder {
-    color: var(--text-muted);
+    color: var(--text-faint);
     opacity: 0.7;
   }
 }
@@ -103,43 +119,68 @@ textarea {
   min-height: 68px;
 }
 
-/* Shared control primitives, used across several components. */
+/* ── Shared primitives ──────────────────────────────────────────────────── */
+
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  padding: 6px 11px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-muted);
+  padding: 5px 10px;
+  font-size: 12px;
   white-space: nowrap;
 
   &:hover:not(:disabled) {
-    background: var(--border);
-    border-color: var(--border-strong);
+    border-color: var(--gold);
+    color: var(--text);
   }
 
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 
   &.btn-primary {
-    background: var(--accent-soft);
-    border-color: var(--accent-line);
-    color: var(--accent);
+    background: var(--gm);
+    border-color: var(--gm);
+    color: var(--parchment);
+
+    &:hover:not(:disabled) {
+      color: var(--parchment);
+    }
   }
 
   &.btn-danger:hover:not(:disabled) {
-    background: var(--redacted-soft);
-    border-color: var(--redacted);
-    color: var(--redacted);
+    border-color: var(--gm);
+    color: var(--secret);
   }
 
   &.btn-sm {
-    padding: 3px 8px;
-    font-size: 12px;
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+}
+
+/* Chip-style option button, used by the filter bar. */
+.chip-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+
+  &:hover {
+    border-color: var(--gold);
+  }
+
+  &.active {
+    background: var(--gm);
+    border-color: var(--gm);
+    color: var(--parchment);
   }
 }
 
@@ -150,26 +191,32 @@ textarea {
   min-width: 0;
 
   > label {
-    font-size: 11px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-muted);
+    color: var(--text-faint);
   }
 }
 
 .error-text {
-  color: var(--redacted);
+  color: var(--secret);
   font-size: 12px;
 }
 
 .empty-state {
-  color: var(--text-muted);
+  color: var(--text-faint);
   font-style: italic;
   padding: 24px;
   text-align: center;
 }
 
-/* Scrollbars: keep them unobtrusive on a dark panel. */
+/* Lucide icons render as inline SVG; keep them aligned with adjacent text. */
+lucide-icon,
+lucide-angular {
+  display: inline-flex;
+  align-items: center;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -180,10 +227,10 @@ textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-strong);
   border-radius: 5px;
 
   &:hover {
-    background: var(--border-strong);
+    background: #4a463d;
   }
 }

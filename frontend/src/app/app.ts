@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { Eye, EyeOff, LucideAngularModule } from 'lucide-angular';
 import { FilterBar } from './components/filter-bar/filter-bar';
 import { GmDossier } from './components/gm-dossier/gm-dossier';
 import { PersonForm } from './components/person-form/person-form';
@@ -25,7 +26,7 @@ interface FormTarget {
  */
 @Component({
   selector: 'app-root',
-  imports: [FilterBar, GmDossier, PersonForm, TimelineView, TreeView],
+  imports: [FilterBar, GmDossier, LucideAngularModule, PersonForm, TimelineView, TreeView],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   host: {
@@ -37,9 +38,24 @@ export class App {
   private readonly treeData = inject(TreeDataService);
   private readonly timelineData = inject(TimelineDataService);
 
+  readonly EyeIcon = Eye;
+  readonly EyeOffIcon = EyeOff;
+
   readonly isGmView = this.viewMode.isGmView;
   readonly isPlayerPreview = this.viewMode.isPlayerPreview;
   readonly world = this.treeData.world;
+
+  /** "House Valcrest — Dynasty Ledger" when a house is in focus. */
+  readonly ledgerTitle = computed<string>(() => {
+    const house = this.viewMode.filter().house;
+    return house === null ? 'Dynasty Ledger' : `House ${house} — Dynasty Ledger`;
+  });
+
+  /** The eyebrow names the nation in focus, or the world when unfiltered. */
+  readonly eyebrow = computed<string>(() => {
+    const nation = this.viewMode.filter().nation;
+    return nation === null ? this.treeData.world() : `Kingdom of ${nation}`;
+  });
   readonly loading = this.treeData.loading;
   readonly loadError = this.treeData.error;
   readonly hiddenPeopleCount = this.treeData.hiddenCount;
@@ -62,6 +78,10 @@ export class App {
       this.dossierPersonId.set(null);
     }
     this.viewMode.setMode(mode);
+  }
+
+  onToggleMode(): void {
+    this.onSetMode(this.isGmView() ? 'player' : 'gm');
   }
 
   onAddPerson(): void {

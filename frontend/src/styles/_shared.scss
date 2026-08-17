@@ -1,0 +1,18 @@
+/* Mixins shared across component stylesheets.
+ *
+ * Component SCSS is compiled in isolation, so anything reused has to live in a
+ * partial that each component `@use`s — it cannot come from the global
+ * styles.scss.
+ */
+
+/* The diagonal hatch that marks every redacted record — person cards and
+   timeline markers alike — so "hidden from players" always looks the same. */
+@mixin redacted-hatch($from: #201d18, $to: #262219, $step: 6px) {
+  background-image: repeating-linear-gradient(
+    135deg,
+    $from 0,
+    $from $step,
+    $to $step,
+    $to $step * 2
+  );
+}

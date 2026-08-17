@@ -4,24 +4,51 @@
 
 .filter-bar {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  padding: 10px 16px;
-  background: var(--bg-raised);
+  align-items: flex-start;
+  gap: 24px;
+  padding: 14px 20px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
-select {
-  min-width: 150px;
+.group-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.house-chip {
+  --house: #8a8272;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.house-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--house);
+  flex: 0 0 auto;
 }
 
 .counts {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0 0 4px auto;
+  flex-direction: column;
+  gap: 2px;
+  margin: 14px 0 0 auto;
   font-size: 12px;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -30,6 +57,6 @@ select {
 }
 
 .count-adjacent {
-  color: var(--text-faint);
+  color: var(--inlaw-note);
   font-style: italic;
 }

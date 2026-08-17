@@ -1,5 +1,16 @@
 import { Component, computed, effect, inject, input, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+  Crown,
+  Flag,
+  Handshake,
+  LucideAngularModule,
+  Swords,
+  Target,
+  User,
+  X,
+} from 'lucide-angular';
+import { houseColor } from '../../models/house-colors';
 import type { GmNotes } from '../../models/person';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
@@ -23,7 +34,7 @@ function toList(raw: string): string[] {
  */
 @Component({
   selector: 'app-gm-dossier',
-  imports: [ReactiveFormsModule],
+  imports: [LucideAngularModule, ReactiveFormsModule],
   templateUrl: './gm-dossier.html',
   styleUrl: './gm-dossier.scss',
 })
@@ -32,10 +43,23 @@ export class GmDossier {
   private readonly viewMode = inject(ViewModeService);
   private readonly formBuilder = inject(FormBuilder);
 
+  readonly UserIcon = User;
+  readonly CrownIcon = Crown;
+  readonly HandshakeIcon = Handshake;
+  readonly SwordsIcon = Swords;
+  readonly TargetIcon = Target;
+  readonly FlagIcon = Flag;
+  readonly CloseIcon = X;
+
   readonly personId = input.required<string>();
   readonly closed = output<void>();
 
   readonly isGmView = this.viewMode.isGmView;
+
+  readonly houseColor = computed<string>(() => {
+    const subject = this.treeData.personById(this.personId());
+    return subject === undefined ? '#8a8272' : houseColor(subject.house);
+  });
 
   readonly form = this.formBuilder.nonNullable.group({
     personalityTraits: [''],
@@ -72,11 +96,21 @@ export class GmDossier {
     return match === undefined ? entry : match.name;
   }
 
+  /**
+   * Only worth showing when at least one entry is a person id that resolved to a
+   * name — otherwise the line just echoes the free text back verbatim.
+   */
+  private resolvedNames(raw: string): string[] {
+    const entries = toList(raw);
+    const anyResolved = entries.some((entry) => this.treeData.personById(entry) !== undefined);
+    return anyResolved ? entries.map((entry) => this.labelFor(entry)) : [];
+  }
+
   readonly allyLabels = computed<string[]>(() =>
-    toList(this.form.controls.allies.value).map((entry) => this.labelFor(entry)),
+    this.resolvedNames(this.form.controls.allies.value),
   );
   readonly enemyLabels = computed<string[]>(() =>
-    toList(this.form.controls.enemies.value).map((entry) => this.labelFor(entry)),
+    this.resolvedNames(this.form.controls.enemies.value),
   );
 
   onSave(): void {

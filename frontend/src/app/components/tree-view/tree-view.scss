@@ -7,12 +7,7 @@
 .tree-scroll {
   height: 100%;
   overflow: auto;
-  /* A faint grid so the chart reads as a drafted plan rather than floating cards. */
   background-color: var(--bg);
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 28px 28px;
 }
 
 .tree-canvas {
@@ -33,20 +28,21 @@
 }
 
 .link-parent {
-  stroke: var(--border-strong);
+  stroke: #5c584d;
 }
 
+/* Marriage lines are gold, as in the prototype — the one relationship type that
+   reads at a glance across the whole chart. */
 .link-spouse {
-  stroke: var(--accent-line);
-  stroke-width: 2.5;
+  stroke: var(--gold);
+  stroke-width: 2;
 }
 
-/* Rumoured parentage: present in the data, dashed in GM View, and absent
-   from the player projection entirely. */
+/* Rumoured parentage: same stroke as a normal parent line but dashed, matching
+   the prototype. The card carries the explanatory note. Absent from the player
+   projection entirely, so this only ever renders in GM View. */
 .link-rumoured {
-  stroke: var(--redacted);
   stroke-dasharray: 4 4;
-  opacity: 0.8;
 }
 
 .gen-label {

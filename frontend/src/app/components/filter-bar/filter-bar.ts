@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { houseColor } from '../../models/house-colors';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
 
@@ -36,6 +37,11 @@ export class FilterBar {
     const { nation, house } = this.filter();
     return nation !== null || house !== null;
   });
+
+  /** House swatch on the chips, so the chart's colour coding is legible here too. */
+  colorFor(house: string): string {
+    return houseColor(house);
+  }
 
   onNationChange(value: string): void {
     this.viewMode.setNation(value === '' ? null : value);

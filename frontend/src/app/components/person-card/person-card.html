@@ -2,74 +2,78 @@
   class="card-body"
   role="button"
   tabindex="0"
+  [style.--house]="houseColor()"
   [attr.aria-label]="'Select ' + person().name"
   (click)="onSelect()"
   (keydown)="onKeydown($event)"
 >
-  <div class="badges">
-    @if (isHiddenRecord()) {
-      <span class="badge badge-redacted" title="Hidden from players">REDACTED</span>
-    }
-    <!-- GM-only marker: in Player Preview this badge would itself reveal whose
-         parentage is being concealed. -->
-    @if (gmView() && person().hideParentage) {
-      <span class="badge badge-parentage" title="Parentage hidden from players">⚯</span>
-    }
-    @if (person().successionOrder === 1) {
-      <span class="badge badge-heir" title="First in succession">♛</span>
-    }
-  </div>
+  <!-- GM affordances are omitted from the DOM entirely in Player Preview. -->
+  @if (gmView()) {
+    <div class="gm-controls">
+      <button
+        type="button"
+        class="icon-btn"
+        title="Edit person"
+        (click)="editPerson.emit(person().id); $event.stopPropagation()"
+      >
+        <lucide-icon [img]="PencilIcon" [size]="13" />
+      </button>
+      <button
+        type="button"
+        class="icon-btn"
+        title="GM dossier"
+        (click)="openDossier.emit(person().id); $event.stopPropagation()"
+      >
+        <lucide-icon [img]="UserIcon" [size]="13" />
+      </button>
+      <button
+        type="button"
+        class="icon-btn"
+        [title]="isHiddenRecord() ? 'Reveal to players' : 'Hide from players'"
+        (click)="toggleVisibility.emit(person().id); $event.stopPropagation()"
+      >
+        <lucide-icon [img]="isHiddenRecord() ? EyeOffIcon : EyeIcon" [size]="13" />
+      </button>
+      <!-- The lock only makes sense for someone who has parents to hide. -->
+      @if (canHideParentage()) {
+        <button
+          type="button"
+          class="icon-btn"
+          [title]="person().hideParentage ? 'Parentage hidden' : 'Parentage known'"
+          (click)="toggleHideParentage.emit(person().id); $event.stopPropagation()"
+        >
+          <lucide-icon [img]="person().hideParentage ? LockIcon : LockOpenIcon" [size]="13" />
+        </button>
+      }
+    </div>
+  }
 
   <div class="name">{{ person().name }}</div>
   @if (person().title) {
     <div class="title">{{ person().title }}</div>
   }
+
   <div class="meta">
-    <span class="house">{{ person().house }}</span>
+    <span class="house-dot"></span>
+    <span class="house">House {{ person().house }}</span>
     @if (lifespan()) {
-      <span class="sep">·</span>
       <span class="years">{{ lifespan() }}</span>
     }
-    @if (person().isAlive) {
-      <span class="alive-dot" title="Living">●</span>
-    }
   </div>
-</div>
 
-<!-- GM affordances are omitted from the DOM entirely in Player Preview. -->
-@if (gmView()) {
-  <div class="gm-controls">
-    <button
-      type="button"
-      class="btn btn-sm"
-      title="Edit person"
-      (click)="editPerson.emit(person().id)"
-    >
-      ✎
-    </button>
-    <button
-      type="button"
-      class="btn btn-sm"
-      title="GM dossier"
-      (click)="openDossier.emit(person().id)"
-    >
-      ▤
-    </button>
-    <button
-      type="button"
-      class="btn btn-sm"
-      [title]="isHiddenRecord() ? 'Reveal to players' : 'Hide from players'"
-      (click)="toggleVisibility.emit(person().id)"
-    >
-      {{ isHiddenRecord() ? '◌' : '👁' }}
-    </button>
-    <button
-      type="button"
-      class="btn btn-sm"
-      [title]="person().hideParentage ? 'Reveal parentage' : 'Hide parentage'"
-      (click)="toggleHideParentage.emit(person().id)"
-    >
-      ⚯
-    </button>
-  </div>
-}
+  @if (tier() === 'adjacent') {
+    <div class="note note-inlaw">married in — not core house</div>
+  }
+
+  <!-- GM-only marker: in Player Preview this note would itself reveal whose
+       parentage is being concealed. -->
+  @if (gmView() && person().hideParentage) {
+    <div class="note note-parentage" title="Parentage hidden from players">
+      ⚠ parentage hidden
+    </div>
+  }
+
+  @if (gmView() && isHiddenRecord()) {
+    <div class="note note-redacted">hidden from players</div>
+  }
+</div>

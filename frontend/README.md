@@ -6,7 +6,7 @@ Angular 21 app for the dynasty tree, timeline, and GM dossiers. See the
 ```bash
 npm install
 npm start      # http://localhost:4200
-npm test       # 42 tests
+npm test       # 50 tests
 npm run build  # production build into dist/
 ```
 
@@ -24,6 +24,7 @@ src/app/
 │   ├── person.ts            # Person, GmNotes, PlayerPerson, PersonLike
 │   ├── dynasty-event.ts
 │   ├── world.ts             # File shapes, filter, year range
+│   ├── house-colors.ts      # Per-house accent colours             (pure)
 │   ├── projection.ts        # Player projections + overlap filter  (pure)
 │   └── tree-layout.ts       # Tree geometry                        (pure)
 ├── services/
@@ -53,6 +54,14 @@ in Player Preview rather than merely hiding it.
 
 `src/app/app.spec.ts` asserts both halves of that at the DOM level. If you add a
 player-facing surface, add a case there.
+
+## Styling
+
+Palette tokens live in `src/styles.scss`; the redaction hatch shared by person cards
+and timeline markers is a mixin in `src/styles/_shared.scss` (component SCSS compiles
+in isolation, so it cannot reach a mixin defined in the global sheet). Icons come from
+`lucide-angular` — pass the imported icon object straight to `[img]`, no `pick()`
+registration needed.
 
 ## Pure logic lives in `models/`
 

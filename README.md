@@ -71,16 +71,16 @@ an ordinary `spouseIds` link.
 
 | Field | Type | Notes |
 |---|---|---|
-| `id` | string | Unique within the world. `p1`, `p2`, … by convention |
+| `id` | string | Unique within the world. Sample data prefixes by nation: `a1…` Astyria, `v1…` Veyrenne |
 | `name` | string | |
 | `house` | string | |
 | `nation` | string | |
-| `title` | string? | `"Queen Aurelia I"` |
+| `title` | string? | `"King"`, `"Queen Consort"` |
 | `birthYear` / `deathYear` | number? | |
 | `isAlive` | boolean | |
 | `parentIds` | string[] | 0–2 entries |
 | `spouseIds` | string[] | Multiple marriages supported; kept symmetric automatically |
-| `successionOrder` | number? | `1` earns a ♛ badge on the card |
+| `successionOrder` | number? | Orders siblings left-to-right within a generation |
 | `notes` | string? | **Player-visible** |
 | `tags` | string[]? | |
 | `generation` | number | Which row of the tree. Parent + 1 |
@@ -110,32 +110,61 @@ Events are a separate collection, cross-linked to people by id rather than neste
 | `nation` / `house` | string? | |
 | `visibility` | `"known"` \| `"hidden"` | Same meaning as on Person |
 
+## The sample world
+
+`data/astyria.json` is the cast from the reference prototypes, across two nations:
+
+- **Astyria** — House **Valcrest** (Aldric, Corin, Elara, Joran, Rowan, Tamsin), with
+  **Solenne**, **Thornwood**, and **Ashgrove** connected by marriage.
+- **Veyrenne** — House **Draven** (Baldric, Isolde, Thane) and **Marrow** (Selene).
+
+It exercises every edge the model has: two marriages for one king (Corin), two
+cross-nation in-marriages, a hidden person (**Joran Ash**, Aldric's unacknowledged
+son), and a visible person with concealed parentage (**Tamsin Valcrest**).
+
+> **Two reconciliations to be aware of.** The prototypes disagreed about Corin's
+> marriage — `dynasty-tracker.jsx` had him married to Yseult Thornwood, while the
+> overlap, dossier, and timeline prototypes all had Isolde Draven. This data treats
+> them as two marriages in sequence: Yseult first (Tamsin's mother), then Isolde in
+> 1224 (Rowan's mother). To make that coherent, three events were added that appear in
+> no prototype: Corin's first wedding (1219), Tamsin's concealed birth (1221), and
+> Yseult's death (1223). Change them freely if your canon differs.
+
 ## Filtering keeps the overlap
 
 Filtering to a house or nation does **not** strictly exclude everyone else. People
 matching the filter are *core*; anyone connected to them by marriage or parentage is
-still drawn, dimmed and dashed, as *adjacent*.
+still drawn at 55% opacity and labelled "married in — not core house", as *adjacent*.
 
 That is the whole point of one flat pool. Filter `astyria.json` to House Valcrest and
-you get 10 Valcrests plus 5 connected outsiders — the Doryne consorts who married in,
-Elenor Marchand, Lysandra Vail, and Corin Ashfell. A strict filter would hide exactly
-the relationships a royal family chart exists to show.
+you get 6 Valcrests plus 5 connected outsiders — Mira Solenne and Yseult Thornwood who
+married in, Isolde Draven from Veyrenne's own royal house, and the Ashgroves. A strict
+filter would hide exactly the relationships a royal family chart exists to show —
+Isolde's Draven identity is the thing that makes the Veyrenne treaty legible.
 
 ## Adding a nation or house
 
 Houses and nations are not configured anywhere — they are just strings on people, and
-the filter dropdowns are derived from whatever values exist. So:
+the filter chips are derived from whatever values exist. So:
 
 1. **Add a person** with the new `house` / `nation` value (the `+ Person` button in
    GM View, or a row in a CSV import). The dropdowns pick it up immediately.
 2. **Link them in.** Give them a `spouseIds` or `parentIds` reference to someone who
-   already exists, and the new house appears alongside the old one in the chart.
+   already exists, and the new house appears alongside the old one in the chart —
+   dimmed when you filter to the other house, which is the behaviour you want.
 3. **Set `generation`** to the parent's generation + 1. This decides the row; the
    validator warns when it disagrees with the parentage.
 4. **Save.** The `Save` button writes `data/{world}.json` and
    `data/{world}-events.json`. Where a browser supports the File System Access API
    you can save straight over the originals; otherwise the files download and you
    move them into `data/` yourself.
+
+### House colours
+
+Each house gets an accent colour used on its card border, its dot, and its filter
+chip. The six houses in the sample world use a hand-picked palette
+(`frontend/src/app/models/house-colors.ts`); any house you invent later is hashed to a
+stable colour from the same range, so nothing needs registering.
 
 ### Adding a whole new world
 
@@ -172,5 +201,9 @@ there are unsaved changes.
   of the two things this data model needs most: multiple marriages per person, and
   dimmed *adjacent*-tier nodes. Layout geometry is a pure function in
   `frontend/src/app/models/tree-layout.ts`, unit-tested independently of rendering.
-- **Tests:** 42 in the app (`cd frontend && npm test`), 68 in the tool
+- **Visual language** is ported from the reference React prototypes: parchment cards
+  on a warm near-black ground, per-house border colours, antique gold for headings and
+  marriage lines, deep red for GM View and dark green for Player Preview. Icons come
+  from `lucide-angular`, the official Angular port of the prototype's icon set.
+- **Tests:** 50 in the app (`cd frontend && npm test`), 68 in the tool
   (`cd tools && dotnet test`).

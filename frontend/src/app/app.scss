@@ -3,67 +3,27 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: var(--bg);
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 .app-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
-  padding: 10px 16px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  padding: 20px 20px 16px;
   flex-wrap: wrap;
 }
 
 .brand {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
+  .eyebrow {
+    margin-bottom: 4px;
+  }
 
   h1 {
-    font-size: 17px;
-    letter-spacing: 0.01em;
+    font-size: 24px;
   }
-}
-
-.world {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  color: var(--text-faint);
-}
-
-.mode-switch {
-  display: flex;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.mode-btn {
-  background: transparent;
-  border: none;
-  padding: 6px 14px;
-  font-size: 12px;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-
-  &:hover {
-    background: var(--panel-2);
-  }
-
-  &.active {
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-weight: 600;
-  }
-}
-
-/* In Player Preview the active pill turns cool, so the mode is unmistakable. */
-:host(.player-mode) .mode-btn.active {
-  background: var(--player-soft);
-  color: var(--player);
 }
 
 .header-actions {
@@ -71,26 +31,45 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* Single toggle, deep red in GM View and dark green in Player Preview — the
+   colour is the primary signal that the mode changed. */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gm);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--parchment);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+
+  &:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+}
+
+:host(.player-mode) .mode-toggle {
+  background: var(--player);
 }
 
 .hidden-count {
   font-size: 11px;
-  color: var(--redacted);
-  border: 1px solid var(--redacted);
-  background: var(--redacted-soft);
+  color: var(--secret);
+  border: 1px solid #5c3038;
+  background: rgba(122, 38, 52, 0.22);
   border-radius: 3px;
-  padding: 2px 7px;
+  padding: 3px 8px;
 }
 
-.player-note {
-  font-size: 12px;
-  color: var(--player);
-  font-style: italic;
-}
-
-/* A standing reminder of which mode is live, visible from across the room. */
+/* A standing band of the mode colour, readable from across the room. */
 :host(.player-mode) .app-header {
-  border-bottom: 2px solid var(--player);
+  box-shadow: inset 0 -2px 0 var(--player-line);
 }
 
 .status-bar {
@@ -99,16 +78,17 @@
   justify-content: space-between;
   gap: 12px;
   margin: 0;
-  padding: 8px 16px;
+  padding: 8px 20px;
   font-size: 12px;
-  background: var(--accent-soft);
-  border-bottom: 1px solid var(--accent-line);
-  color: var(--accent);
+  background: var(--gold-soft);
+  border-top: 1px solid rgba(176, 141, 62, 0.35);
+  border-bottom: 1px solid rgba(176, 141, 62, 0.35);
+  color: var(--gold);
 
   &.error {
-    background: var(--redacted-soft);
-    border-color: var(--redacted);
-    color: var(--redacted);
+    background: rgba(122, 38, 52, 0.22);
+    border-color: #5c3038;
+    color: var(--secret);
   }
 
   code {
@@ -131,9 +111,42 @@
 }
 
 .timeline-pane {
-  flex: 0 0 336px;
+  flex: 0 0 340px;
   min-height: 0;
   border-left: 1px solid var(--border);
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 20px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-faint);
+
+  div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  em {
+    font-style: italic;
+    color: var(--text-muted);
+  }
+}
+
+.legend-swatch {
+  display: inline-flex;
+  width: 13px;
+  justify-content: center;
+}
+
+.legend-lock {
+  color: var(--secret);
 }
 
 @media (max-width: 900px) {
@@ -146,13 +159,17 @@
     border-left: none;
     border-top: 1px solid var(--border);
   }
+
+  .legend {
+    display: none;
+  }
 }
 
 /* ── Overlays ────────────────────────────────────────────────────────────── */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 9, 12, 0.62);
+  background: rgba(0, 0, 0, 0.55);
   z-index: 20;
 }
 
@@ -163,10 +180,10 @@
   transform: translate(-50%, -50%);
   width: min(640px, calc(100vw - 32px));
   max-height: min(88vh, 860px);
-  background: var(--panel);
+  background: var(--bg-raised);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
   overflow: hidden;
   z-index: 21;
 }
@@ -176,9 +193,9 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(430px, calc(100vw - 24px));
-  background: var(--panel);
+  width: min(420px, 100vw);
+  background: var(--bg-raised);
   border-left: 1px solid var(--border-strong);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-panel);
   z-index: 21;
 }

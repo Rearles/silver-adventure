@@ -1,14 +1,27 @@
 {
   "events": [
     {
-      "id": "e1",
-      "title": "Coronation of Aldric I",
+      "id": "e3",
+      "title": "Aldric crowned King of Astyria",
       "type": "coronation",
-      "year": 1425,
-      "era": "Founding",
-      "description": "Aldric Valcrest crowned first King of a unified Astyria.",
+      "year": 1195,
+      "era": "The Long Reign",
       "relatedPersonIds": [
-        "p1"
+        "a1"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e1",
+      "title": "Aldric weds Mira Solenne",
+      "type": "wedding",
+      "year": 1198,
+      "era": "The Long Reign",
+      "relatedPersonIds": [
+        "a1",
+        "a2"
       ],
       "nation": "Astyria",
       "house": "Valcrest",
@@ -16,27 +29,41 @@
     },
     {
       "id": "e2",
-      "title": "Marriage of Aldric I and Seraphine of Doryne",
-      "type": "wedding",
-      "year": 1428,
-      "era": "Founding",
-      "description": "Sealed the first Astyrian-Meruvian alliance.",
+      "title": "Corin Valcrest born",
+      "type": "birth",
+      "year": 1201,
+      "era": "The Long Reign",
       "relatedPersonIds": [
-        "p1",
-        "p2"
+        "a3"
       ],
       "nation": "Astyria",
       "house": "Valcrest",
       "visibility": "known"
     },
     {
-      "id": "e3",
-      "title": "Birth of Rowan Valcrest",
+      "id": "e10",
+      "title": "A son is born at Ashfen and given to the Ash family",
       "type": "birth",
-      "year": 1430,
-      "era": "Founding",
+      "year": 1205,
+      "era": "The Long Reign",
+      "description": "Aldric's natural son Joran, placed with a household loyal enough not to ask questions.",
       "relatedPersonIds": [
-        "p3"
+        "a1",
+        "a7"
+      ],
+      "nation": "Astyria",
+      "visibility": "hidden"
+    },
+    {
+      "id": "e11",
+      "title": "Corin weds Yseult Thornwood",
+      "type": "wedding",
+      "year": 1219,
+      "era": "The Long Reign",
+      "description": "Corin's first marriage, arranged to settle the Thornwood tithes.",
+      "relatedPersonIds": [
+        "a3",
+        "a4"
       ],
       "nation": "Astyria",
       "house": "Valcrest",
@@ -44,29 +71,54 @@
     },
     {
       "id": "e4",
-      "title": "The Marchand Rising",
+      "title": "War of the Ashfen Marches begins",
       "type": "war",
-      "year": 1450,
-      "era": "The Long Feud",
-      "description": "House Marchand contests the river tolls; four years of intermittent war.",
+      "year": 1220,
+      "era": "The Long Reign",
       "relatedPersonIds": [
-        "p1",
-        "p3",
-        "p6"
+        "a1"
       ],
       "nation": "Astyria",
       "visibility": "known"
     },
     {
-      "id": "e5",
-      "title": "Marriage of Rowan and Elenor Marchand",
-      "type": "wedding",
-      "year": 1452,
-      "era": "The Long Feud",
-      "description": "The marriage that ended the Marchand Rising.",
+      "id": "e12",
+      "title": "A daughter is born to Corin and Yseult",
+      "type": "birth",
+      "year": 1221,
+      "era": "The Long Reign",
+      "description": "Tamsin. The birth is recorded, the parentage is not — she is raised at court as a ward.",
       "relatedPersonIds": [
-        "p3",
-        "p6"
+        "a3",
+        "a4",
+        "a9"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "hidden"
+    },
+    {
+      "id": "e13",
+      "title": "Yseult Thornwood dies",
+      "type": "death",
+      "year": 1223,
+      "era": "The Long Reign",
+      "relatedPersonIds": [
+        "a4"
+      ],
+      "nation": "Astyria",
+      "house": "Thornwood",
+      "visibility": "known"
+    },
+    {
+      "id": "e5",
+      "title": "Corin weds Isolde Draven — Veyrenne treaty sealed",
+      "type": "wedding",
+      "year": 1224,
+      "era": "The Veyrenne Accord",
+      "relatedPersonIds": [
+        "a3",
+        "v1"
       ],
       "nation": "Astyria",
       "house": "Valcrest",
@@ -74,42 +126,27 @@
     },
     {
       "id": "e6",
-      "title": "Death of Queen Elenor",
+      "title": "Queen Mira dies of the wasting fever",
       "type": "death",
-      "year": 1461,
-      "era": "The Long Feud",
-      "description": "Died in childbirth.",
+      "year": 1226,
+      "era": "The Veyrenne Accord",
       "relatedPersonIds": [
-        "p6"
+        "a2"
       ],
       "nation": "Astyria",
-      "house": "Marchand",
+      "house": "Solenne",
       "visibility": "known"
     },
     {
       "id": "e7",
-      "title": "The Ashfell Fostering",
-      "type": "other",
-      "year": 1461,
-      "era": "The Long Feud",
-      "description": "Rowan pays House Ashfell to raise his natural son Corin as their own.",
+      "title": "Rowan Valcrest born",
+      "type": "birth",
+      "year": 1227,
+      "era": "The Veyrenne Accord",
       "relatedPersonIds": [
-        "p3",
-        "p11"
-      ],
-      "nation": "Astyria",
-      "house": "Ashfell",
-      "visibility": "hidden"
-    },
-    {
-      "id": "e8",
-      "title": "Marriage of Rowan and Lysandra Vail",
-      "type": "wedding",
-      "year": 1462,
-      "era": "The Long Feud",
-      "relatedPersonIds": [
-        "p3",
-        "p7"
+        "a3",
+        "v1",
+        "a8"
       ],
       "nation": "Astyria",
       "house": "Valcrest",
@@ -117,111 +154,26 @@
     },
     {
       "id": "e9",
-      "title": "The Concealed Birth",
-      "type": "birth",
-      "year": 1465,
-      "era": "The Long Feud",
-      "description": "Lysandra's second child is declared an ill omen by the Amber Sept and hidden at the Vail country house.",
+      "title": "Duke Harrow poisons the treaty envoy",
+      "type": "other",
+      "year": 1230,
+      "era": "The Veyrenne Accord",
+      "description": "Never traced back to him. Aldric suspects but cannot prove it.",
       "relatedPersonIds": [
-        "p12",
-        "p3",
-        "p7"
+        "a1"
       ],
       "nation": "Astyria",
-      "house": "Vail",
       "visibility": "hidden"
     },
     {
-      "id": "e10",
-      "title": "Death of Aldric I",
+      "id": "e8",
+      "title": "King Aldric dies — Corin crowned",
       "type": "death",
-      "year": 1468,
-      "era": "The Long Feud",
+      "year": 1231,
+      "era": "The Veyrenne Accord",
       "relatedPersonIds": [
-        "p1"
-      ],
-      "nation": "Astyria",
-      "house": "Valcrest",
-      "visibility": "known"
-    },
-    {
-      "id": "e11",
-      "title": "Coronation of Rowan II",
-      "type": "coronation",
-      "year": 1468,
-      "era": "Rowan's Peace",
-      "relatedPersonIds": [
-        "p3"
-      ],
-      "nation": "Astyria",
-      "house": "Valcrest",
-      "visibility": "known"
-    },
-    {
-      "id": "e12",
-      "title": "Battle of Greywater Ford",
-      "type": "battle",
-      "year": 1478,
-      "era": "Rowan's Peace",
-      "description": "Rowan takes the leg wound that lames him. Tristan's first command.",
-      "relatedPersonIds": [
-        "p3",
-        "p9"
-      ],
-      "nation": "Astyria",
-      "visibility": "known"
-    },
-    {
-      "id": "e13",
-      "title": "Marriage of Aurelia and Halden of Doryne",
-      "type": "wedding",
-      "year": 1479,
-      "era": "Rowan's Peace",
-      "description": "The second Doryne match, renewing the Meruvian pact.",
-      "relatedPersonIds": [
-        "p8",
-        "p13"
-      ],
-      "nation": "Astyria",
-      "house": "Valcrest",
-      "visibility": "known"
-    },
-    {
-      "id": "e14",
-      "title": "The Treaty of Amber",
-      "type": "treaty",
-      "year": 1486,
-      "era": "Rowan's Peace",
-      "description": "Trade terms fixed between Astyria and Meruvia.",
-      "relatedPersonIds": [
-        "p3",
-        "p13"
-      ],
-      "nation": "Astyria",
-      "visibility": "known"
-    },
-    {
-      "id": "e15",
-      "title": "Death of Rowan II",
-      "type": "death",
-      "year": 1495,
-      "era": "The Amber Crown",
-      "relatedPersonIds": [
-        "p3"
-      ],
-      "nation": "Astyria",
-      "house": "Valcrest",
-      "visibility": "known"
-    },
-    {
-      "id": "e16",
-      "title": "Coronation of Aurelia I",
-      "type": "coronation",
-      "year": 1495,
-      "era": "The Amber Crown",
-      "description": "First queen regnant of Astyria.",
-      "relatedPersonIds": [
-        "p8"
+        "a1",
+        "a3"
       ],
       "nation": "Astyria",
       "house": "Valcrest",

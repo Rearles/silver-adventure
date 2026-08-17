@@ -1,3 +1,5 @@
+@use '../../../styles/shared' as shared;
+
 :host {
   display: block;
   position: relative;
@@ -5,49 +7,51 @@
   height: 100%;
 }
 
-/* Raise the hovered card above its neighbours so the controls that hang below it
-   are never covered by an adjacent node. */
+/* Raise the hovered card above its neighbours so the controls sitting inside its
+   top-right corner are never clipped by an adjacent node. */
 :host(:hover),
 :host(:focus-within) {
   z-index: 10;
 }
 
 .card-body {
+  --house: #8a8272;
+
   position: relative;
   height: 100%;
-  padding: 7px 9px;
-  background: var(--panel);
-  border: 1px solid var(--border-strong);
-  border-left: 3px solid var(--accent-line);
+  padding: 10px 12px;
   border-radius: var(--radius);
+  background: var(--parchment);
+  border: 2px solid var(--house);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+  transition: box-shadow 0.12s, transform 0.12s, opacity 0.15s;
 
   &:hover {
-    background: var(--panel-2);
     transform: translateY(-1px);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
   }
 }
 
 .name {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-right: 46px;
 }
 
 .title {
   font-size: 11px;
-  color: var(--text-muted);
+  opacity: 0.75;
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -56,124 +60,148 @@
 .meta {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 2px;
+  gap: 5px;
+  margin-top: 6px;
   font-size: 10px;
-  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
 }
 
+.house-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--house);
+  flex: 0 0 auto;
+}
+
 .house {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.alive-dot {
-  color: var(--alive);
+.years {
   margin-left: auto;
-  font-size: 8px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
 }
 
-.badges {
-  position: absolute;
-  top: 5px;
-  right: 6px;
-  display: flex;
-  gap: 3px;
-  align-items: center;
-}
-
-.badge {
+.note {
   font-size: 9px;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 3px;
-  border: 1px solid transparent;
+  margin-top: 5px;
+  line-height: 1.3;
 }
 
-.badge-redacted {
-  background: var(--redacted-soft);
-  border-color: var(--redacted);
-  color: var(--redacted);
-  font-weight: 700;
-  letter-spacing: 0.06em;
+.note-inlaw {
+  color: var(--inlaw-note);
 }
 
-.badge-parentage {
-  background: var(--panel-2);
-  border-color: var(--border-strong);
-  color: var(--text-muted);
+.note-parentage {
+  color: #9c4a5f;
 }
 
-.badge-heir {
-  background: var(--accent-soft);
-  border-color: var(--accent-line);
-  color: var(--accent);
+.note-redacted {
+  color: var(--redacted-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-/* ── Adjacent tier: in-married from another house, rendered secondary ────── */
+/* ── Adjacent tier: married in from another house, rendered secondary ────── */
 :host(.is-adjacent) .card-body {
-  background: transparent;
-  border-style: dashed;
-  border-left-color: var(--border-strong);
-  opacity: 0.62;
-}
-
-:host(.is-adjacent) .name {
-  font-weight: 500;
+  opacity: 0.55;
+  box-shadow: none;
 }
 
 /* ── Hidden record: redacted treatment, GM View only ────────────────────── */
 :host(.is-hidden-record) .card-body {
-  border-color: var(--redacted);
-  border-left-color: var(--redacted);
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgba(180, 84, 79, 0.11) 0 6px,
-    transparent 6px 12px
-  );
+  @include shared.redacted-hatch;
+
+  background-color: var(--panel);
+  border: 1px dashed var(--redacted-border);
+  color: var(--redacted-ink);
+  box-shadow: none;
+  /* The dashed border is 1px where a normal card is 2px; pad to compensate so
+     the text does not shift by a pixel between states. */
+  padding: 11px 13px;
+
+  .house-dot {
+    opacity: 0.5;
+  }
 }
 
-:host(.is-deceased) .name {
-  color: var(--text);
-  opacity: 0.86;
-}
-
-/* ── Selection & event-driven highlight ─────────────────────────────────── */
+/* ── Selection, event highlight, and event dimming ──────────────────────── */
 :host(.is-selected) .card-body {
-  border-color: var(--accent);
-  border-left-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-line);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft), var(--shadow-card);
 }
 
 :host(.is-highlighted) .card-body {
-  border-color: var(--player);
-  border-left-color: var(--player);
-  box-shadow: 0 0 0 2px var(--player-soft);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(176, 141, 62, 0.35);
 }
 
-/* ── GM controls: revealed on hover so the card stays compact ───────────── */
+/* An event is selected and this person is not involved in it. */
+:host(.is-dimmed) .card-body {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* ── GM controls ─────────────────────────────────────────────────────────
+   Revealed on hover/focus rather than always shown: four controls would eat the
+   width the name needs, and the card already states its hidden / concealed-
+   parentage status in words below. On reveal they overlay the name's right end
+   behind a wash of the card colour, so nothing reflows. */
 .gm-controls {
   position: absolute;
-  top: calc(100% - 2px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: 4px;
+  right: 4px;
   display: flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  gap: 3px;
+  z-index: 2;
+  padding: 2px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--parchment) 88%, transparent);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s;
-  z-index: 5;
 }
 
 :host(:hover) .gm-controls,
 :host(:focus-within) .gm-controls {
   opacity: 1;
   pointer-events: auto;
+}
+
+:host(.is-hidden-record) .gm-controls {
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 4px;
+  padding: 3px;
+  color: inherit;
+  transition: background 0.12s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+}
+
+/* On a redacted card the controls sit on a dark ground, so invert the wash. */
+:host(.is-hidden-record) .icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
 }

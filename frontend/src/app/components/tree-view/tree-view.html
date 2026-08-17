@@ -47,6 +47,7 @@
             [gmView]="isGmView()"
             [selected]="selectedPersonId() === node.person.id"
             [highlighted]="isHighlighted(node.person.id)"
+            [dimmed]="isDimmed(node.person.id)"
             (select)="onSelect($event)"
             (editPerson)="editPerson.emit($event)"
             (openDossier)="openDossier.emit($event)"

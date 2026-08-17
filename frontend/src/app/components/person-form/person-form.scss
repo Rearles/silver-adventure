@@ -55,7 +55,7 @@
 
   input {
     width: auto;
-    accent-color: var(--accent);
+    accent-color: var(--gold);
   }
 }
 
@@ -73,10 +73,10 @@
   gap: 5px;
   padding: 2px 4px 2px 8px;
   font-size: 12px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-line);
+  background: var(--gold-soft);
+  border: 1px solid rgba(176, 141, 62, 0.5);
   border-radius: 999px;
-  color: var(--accent);
+  color: var(--gold);
 
   button {
     background: none;

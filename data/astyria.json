@@ -1,416 +1,371 @@
 {
   "people": [
     {
-      "id": "p1",
+      "id": "a1",
       "name": "Aldric Valcrest",
       "house": "Valcrest",
       "nation": "Astyria",
-      "title": "King Aldric I",
-      "birthYear": 1402,
-      "deathYear": 1468,
+      "title": "King",
+      "birthYear": 1170,
+      "deathYear": 1231,
       "isAlive": false,
       "parentIds": [],
       "spouseIds": [
-        "p2"
+        "a2"
       ],
       "successionOrder": 1,
-      "notes": "Unified the river baronies into the Astyrian crown.",
-      "tags": [
-        "monarch",
-        "founder"
-      ],
-      "generation": 0,
-      "visibility": "known",
-      "hideParentage": false
-    },
-    {
-      "id": "p2",
-      "name": "Seraphine of Doryne",
-      "house": "Doryne",
-      "nation": "Meruvia",
-      "title": "Queen Consort of Astyria",
-      "birthYear": 1408,
-      "deathYear": 1471,
-      "isAlive": false,
-      "parentIds": [],
-      "spouseIds": [
-        "p1"
-      ],
-      "notes": "Married into Valcrest from the Meruvian House Doryne.",
-      "tags": [
-        "consort",
-        "foreign-born"
-      ],
-      "generation": 0,
-      "visibility": "known",
-      "hideParentage": false
-    },
-    {
-      "id": "p3",
-      "name": "Rowan Valcrest",
-      "house": "Valcrest",
-      "nation": "Astyria",
-      "title": "King Rowan II",
-      "birthYear": 1430,
-      "deathYear": 1495,
-      "isAlive": false,
-      "parentIds": [
-        "p1",
-        "p2"
-      ],
-      "spouseIds": [
-        "p6",
-        "p7"
-      ],
-      "successionOrder": 1,
-      "notes": "Twice married. Reigned twenty-seven years.",
+      "notes": "Crowned 1195. Reigned thirty-six years.",
       "tags": [
         "monarch"
       ],
-      "generation": 1,
+      "generation": 0,
       "visibility": "known",
       "hideParentage": false,
       "gmNotes": {
         "personalityTraits": [
-          "Calculating",
-          "Outwardly pious",
-          "Slow to forgive"
+          "Stubborn",
+          "Deeply loyal to old friends",
+          "Quietly grieving his late wife"
         ],
-        "physicalDescription": "Tall, silver-bearded, walks with a cane after Greywater Ford.",
+        "physicalDescription": "Broad-shouldered, silver-bearded, an old dueling scar along his left jaw. Favors plain wool over royal finery.",
         "allies": [
-          "p7",
-          "The Sept of Amber"
+          "a6",
+          "The Silverhand Mercenary Company"
         ],
         "enemies": [
-          "House Marchand's cadet branch"
+          "Duke Harrow of the eastern march — disputes the succession"
         ],
-        "motivations": "Secure an unbroken Valcrest succession before he dies.",
-        "goals": "Have Aurelia crowned without a regency council.",
-        "ambitions": "Be remembered as the king who ended the Marchand feud.",
-        "secrets": "Fathered Corin Ashfell in 1461 while Elenor was dying. Paid House Ashfell to raise the boy as their own. If this surfaces, Corin's claim outranks Mira's."
+        "motivations": "Wants to see the kingdom stable before he dies. Doesn't trust his own health estimates.",
+        "goals": "Secure Corin's claim before the Veyrenne treaty talks conclude.",
+        "ambitions": "Wants to be remembered as the king who ended the border wars, not just survived them.",
+        "secrets": "Knows about Joran (his unacknowledged son) but has never told Corin. Plans to reveal it only if Corin's line fails."
       }
     },
     {
-      "id": "p4",
-      "name": "Isolde Valcrest",
-      "house": "Valcrest",
+      "id": "a2",
+      "name": "Mira Solenne",
+      "house": "Solenne",
       "nation": "Astyria",
-      "title": "Princess of Astyria",
-      "birthYear": 1433,
-      "deathYear": 1489,
-      "isAlive": false,
-      "parentIds": [
-        "p1",
-        "p2"
-      ],
-      "spouseIds": [],
-      "successionOrder": 2,
-      "notes": "Took holy orders rather than marry abroad.",
-      "tags": [
-        "clergy"
-      ],
-      "generation": 1,
-      "visibility": "known",
-      "hideParentage": false
-    },
-    {
-      "id": "p5",
-      "name": "Cassian Valcrest",
-      "house": "Valcrest",
-      "nation": "Astyria",
-      "title": "Prince of Astyria",
-      "birthYear": 1436,
-      "deathYear": 1462,
-      "isAlive": false,
-      "parentIds": [
-        "p1",
-        "p2"
-      ],
-      "spouseIds": [],
-      "successionOrder": 3,
-      "notes": "Died of fever on campaign, unmarried.",
-      "tags": [],
-      "generation": 1,
-      "visibility": "known",
-      "hideParentage": false
-    },
-    {
-      "id": "p6",
-      "name": "Elenor Marchand",
-      "house": "Marchand",
-      "nation": "Astyria",
-      "title": "Queen Consort of Astyria",
-      "birthYear": 1432,
-      "deathYear": 1461,
+      "title": "Queen",
+      "birthYear": 1176,
+      "deathYear": 1226,
       "isAlive": false,
       "parentIds": [],
       "spouseIds": [
-        "p3"
+        "a1"
       ],
-      "notes": "First wife of Rowan II. Died in childbirth.",
+      "notes": "Married into Valcrest from House Solenne in 1198.",
       "tags": [
         "consort"
       ],
-      "generation": 1,
+      "generation": 0,
       "visibility": "known",
       "hideParentage": false
     },
     {
-      "id": "p7",
-      "name": "Lysandra Vail",
-      "house": "Vail",
-      "nation": "Astyria",
-      "title": "Queen Consort of Astyria",
-      "birthYear": 1440,
-      "deathYear": 1502,
-      "isAlive": false,
-      "parentIds": [],
-      "spouseIds": [
-        "p3"
-      ],
-      "notes": "Second wife of Rowan II.",
-      "tags": [
-        "consort"
-      ],
-      "generation": 1,
-      "visibility": "known",
-      "hideParentage": false,
-      "gmNotes": {
-        "personalityTraits": [
-          "Watchful",
-          "Protective to a fault"
-        ],
-        "physicalDescription": "Small, plainly dressed, never without her keys.",
-        "allies": [
-          "p3"
-        ],
-        "enemies": [
-          "p8"
-        ],
-        "motivations": "Keep her own children alive and out of the succession fight.",
-        "secrets": "Knows about Corin. Has kept the midwife's letter for thirty years as leverage."
-      }
-    },
-    {
-      "id": "p8",
-      "name": "Aurelia Valcrest",
+      "id": "a3",
+      "name": "Corin Valcrest",
       "house": "Valcrest",
       "nation": "Astyria",
-      "title": "Queen Aurelia I",
-      "birthYear": 1455,
+      "title": "King",
+      "birthYear": 1201,
       "isAlive": true,
       "parentIds": [
-        "p3",
-        "p6"
+        "a1",
+        "a2"
       ],
       "spouseIds": [
-        "p13"
+        "a4",
+        "v1"
       ],
       "successionOrder": 1,
-      "notes": "Reigning monarch. Married the Meruvian prince Halden.",
+      "notes": "Reigning monarch, crowned 1231. Twice married.",
       "tags": [
         "monarch",
         "reigning"
       ],
-      "generation": 2,
+      "generation": 1,
       "visibility": "known",
       "hideParentage": false,
       "gmNotes": {
         "personalityTraits": [
-          "Decisive",
-          "Impatient with ceremony",
-          "Fiercely literal"
+          "Idealistic, sometimes naive",
+          "Quick temper he's trying to control",
+          "Genuinely loves Isolde"
         ],
-        "physicalDescription": "Wears her mother's Marchand signet openly, which irritates the court.",
+        "physicalDescription": "Lean, dark-haired, restless hands — always fidgeting with a signet ring.",
         "allies": [
-          "p13",
-          "p9"
+          "v1",
+          "Captain Ysbel of the Palace Guard"
         ],
         "enemies": [
-          "p7",
-          "p10"
+          "Duke Harrow — inherited his father's feud"
         ],
-        "motivations": "Prove a queen regnant needs no consort's guidance.",
-        "goals": "Formalise the Meruvian trade pact before Elara comes of age.",
-        "ambitions": "Absorb the Ashfell holdings into the crown.",
-        "secrets": "Suspects Corin is her half-brother but has never said so aloud. Has quietly had his household watched since 1492."
+        "motivations": "Desperate to prove he can rule without his father's shadow.",
+        "goals": "Formalize the Veyrenne alliance through Rowan's eventual marriage.",
+        "ambitions": "Wants a reign remembered for peace, not conquest — actively resists advisors pushing war."
       }
     },
     {
-      "id": "p9",
-      "name": "Tristan Valcrest",
-      "house": "Valcrest",
+      "id": "a4",
+      "name": "Yseult Thornwood",
+      "house": "Thornwood",
       "nation": "Astyria",
-      "title": "Prince of Astyria",
-      "birthYear": 1458,
-      "isAlive": true,
-      "parentIds": [
-        "p3",
-        "p6"
+      "title": "Princess Consort",
+      "birthYear": 1200,
+      "deathYear": 1223,
+      "isAlive": false,
+      "parentIds": [],
+      "spouseIds": [
+        "a3"
       ],
-      "spouseIds": [],
-      "successionOrder": 2,
-      "notes": "Commands the royal host.",
+      "notes": "Corin's first wife. Died 1223.",
       "tags": [
-        "military"
+        "consort"
       ],
-      "generation": 2,
+      "generation": 1,
       "visibility": "known",
       "hideParentage": false
     },
     {
-      "id": "p10",
-      "name": "Mira Valcrest",
+      "id": "a5",
+      "name": "Elara Valcrest",
       "house": "Valcrest",
       "nation": "Astyria",
-      "title": "Princess of Astyria",
-      "birthYear": 1463,
+      "title": "Princess",
+      "birthYear": 1204,
       "isAlive": true,
       "parentIds": [
-        "p3",
-        "p7"
+        "a1",
+        "a2"
       ],
-      "spouseIds": [],
-      "successionOrder": 3,
-      "notes": "Daughter of Rowan's second marriage.",
+      "spouseIds": [
+        "a6"
+      ],
+      "successionOrder": 2,
+      "notes": "Married Baron Dreston Ashgrove.",
       "tags": [],
-      "generation": 2,
+      "generation": 1,
       "visibility": "known",
       "hideParentage": false
     },
     {
-      "id": "p11",
-      "name": "Corin Ashfell",
-      "house": "Ashfell",
+      "id": "a6",
+      "name": "Dreston Ashgrove",
+      "house": "Ashgrove",
       "nation": "Astyria",
-      "title": "Lord of Ashfell",
-      "birthYear": 1461,
+      "title": "Baron",
+      "birthYear": 1198,
       "isAlive": true,
-      "parentIds": [
-        "p3"
+      "parentIds": [],
+      "spouseIds": [
+        "a5"
       ],
-      "spouseIds": [],
-      "notes": "Raised as an Ashfell. Publicly no relation to the crown.",
+      "notes": "Owes King Aldric a life-debt.",
       "tags": [
         "noble"
       ],
+      "generation": 1,
+      "visibility": "known",
+      "hideParentage": false
+    },
+    {
+      "id": "a7",
+      "name": "Joran Ash",
+      "house": "Valcrest",
+      "nation": "Astyria",
+      "title": "Unacknowledged Son",
+      "birthYear": 1205,
+      "isAlive": true,
+      "parentIds": [
+        "a1"
+      ],
+      "spouseIds": [],
+      "notes": "Existence unknown at court.",
+      "tags": [
+        "secret"
+      ],
+      "generation": 1,
+      "visibility": "hidden",
+      "hideParentage": false,
+      "gmNotes": {
+        "personalityTraits": [
+          "Watchful",
+          "Slow to trust",
+          "Carries himself like a soldier, not a courtier"
+        ],
+        "physicalDescription": "Has Aldric's jaw and the same trick of standing with his weight on one heel.",
+        "allies": [
+          "a1"
+        ],
+        "enemies": [],
+        "motivations": "Wants acknowledgement far more than he wants a title.",
+        "goals": "Get close enough to Corin to judge what kind of king he is.",
+        "ambitions": "Undecided — which is what makes him dangerous.",
+        "secrets": "Aldric's natural son, born 1205. Aldric knows and has never told Corin. Joran himself knows, and has told exactly one person."
+      }
+    },
+    {
+      "id": "a8",
+      "name": "Rowan Valcrest",
+      "house": "Valcrest",
+      "nation": "Astyria",
+      "title": "Crown Prince",
+      "birthYear": 1227,
+      "isAlive": true,
+      "parentIds": [
+        "a3",
+        "v1"
+      ],
+      "spouseIds": [],
+      "successionOrder": 1,
+      "notes": "Heir apparent. Son of the Veyrenne marriage.",
+      "tags": [
+        "heir"
+      ],
+      "generation": 2,
+      "visibility": "known",
+      "hideParentage": false
+    },
+    {
+      "id": "a9",
+      "name": "Tamsin Valcrest",
+      "house": "Valcrest",
+      "nation": "Astyria",
+      "title": "Lady",
+      "birthYear": 1221,
+      "isAlive": true,
+      "parentIds": [
+        "a3",
+        "a4"
+      ],
+      "spouseIds": [],
+      "successionOrder": 2,
+      "notes": "Of the royal household. Her parentage is not a matter of public record.",
+      "tags": [],
       "generation": 2,
       "visibility": "known",
       "hideParentage": true,
       "gmNotes": {
         "personalityTraits": [
-          "Careful",
-          "Charming when it costs nothing"
+          "Composed",
+          "Unusually well informed"
         ],
-        "physicalDescription": "Has Rowan's exact widow's peak, which two courtiers have noticed.",
-        "allies": [
-          "The Ashfell steward Bevan"
-        ],
-        "enemies": [
-          "p8"
-        ],
-        "motivations": "Find out who his father actually was.",
-        "goals": "Obtain the midwife's letter Lysandra is holding.",
-        "ambitions": "Legitimisation, if the truth ever favours him.",
-        "secrets": "Rowan II's natural son. He half-knows: he has the letter's existence from a drunk priest but not its contents."
+        "physicalDescription": "Fair, favours Thornwood green, wears no Valcrest sigil.",
+        "allies": [],
+        "enemies": [],
+        "motivations": "Wants her claim recognised without having to ask for it.",
+        "goals": "Establish that she is Corin's daughter by his first marriage.",
+        "ambitions": "The succession, if Rowan falters.",
+        "secrets": "Corin's daughter by Yseult Thornwood, born 1221. The court treats her as a ward. If her parentage is proven she predates Rowan by six years."
       }
     },
     {
-      "id": "p12",
-      "name": "Nyx Valcrest",
-      "house": "Valcrest",
+      "id": "a10",
+      "name": "Wren Ashgrove",
+      "house": "Ashgrove",
       "nation": "Astyria",
-      "title": "Unacknowledged",
-      "birthYear": 1465,
+      "title": "Lord",
+      "birthYear": 1230,
       "isAlive": true,
       "parentIds": [
-        "p3",
-        "p7"
+        "a5",
+        "a6"
       ],
       "spouseIds": [],
-      "notes": "Existence concealed from the court since birth.",
+      "notes": "Heir to the Ashgrove barony.",
       "tags": [
-        "secret"
+        "noble"
       ],
       "generation": 2,
-      "visibility": "hidden",
-      "hideParentage": false,
-      "gmNotes": {
-        "personalityTraits": [
-          "Silent",
-          "Unnervingly observant"
-        ],
-        "physicalDescription": "Pale, hooded, never seen at court in daylight.",
-        "allies": [
-          "p7"
-        ],
-        "enemies": [],
-        "motivations": "Remain unseen until it is useful not to be.",
-        "goals": "Unclear even to Lysandra.",
-        "ambitions": "The throne, eventually.",
-        "secrets": "Lysandra's second child, hidden at birth after the Amber Sept declared the twin-birth an ill omen. Raised in the Vail country house."
-      }
+      "visibility": "known",
+      "hideParentage": false
     },
     {
-      "id": "p13",
-      "name": "Halden of Doryne",
-      "house": "Doryne",
-      "nation": "Meruvia",
-      "title": "Prince Consort of Astyria",
-      "birthYear": 1452,
+      "id": "v1",
+      "name": "Isolde Draven",
+      "house": "Draven",
+      "nation": "Veyrenne",
+      "title": "Queen Consort",
+      "birthYear": 1203,
       "isAlive": true,
-      "parentIds": [],
-      "spouseIds": [
-        "p8"
+      "parentIds": [
+        "v2",
+        "v3"
       ],
-      "notes": "Second Doryne marriage into Valcrest, two generations after Seraphine.",
+      "spouseIds": [
+        "a3"
+      ],
+      "notes": "Married Corin in 1224, sealing the Veyrenne treaty.",
       "tags": [
         "consort",
         "foreign-born"
       ],
-      "generation": 2,
+      "generation": 1,
       "visibility": "known",
       "hideParentage": false
     },
     {
-      "id": "p14",
-      "name": "Elara Valcrest",
-      "house": "Valcrest",
-      "nation": "Astyria",
-      "title": "Crown Princess of Astyria",
-      "birthYear": 1480,
+      "id": "v2",
+      "name": "Baldric Draven",
+      "house": "Draven",
+      "nation": "Veyrenne",
+      "title": "King",
+      "birthYear": 1174,
+      "isAlive": true,
+      "parentIds": [],
+      "spouseIds": [
+        "v3"
+      ],
+      "successionOrder": 1,
+      "notes": "Reigning King of Veyrenne.",
+      "tags": [
+        "monarch",
+        "reigning"
+      ],
+      "generation": 0,
+      "visibility": "known",
+      "hideParentage": false
+    },
+    {
+      "id": "v3",
+      "name": "Selene Marrow",
+      "house": "Marrow",
+      "nation": "Veyrenne",
+      "title": "Queen",
+      "birthYear": 1178,
+      "isAlive": true,
+      "parentIds": [],
+      "spouseIds": [
+        "v2"
+      ],
+      "notes": "Married into Draven from House Marrow.",
+      "tags": [
+        "consort"
+      ],
+      "generation": 0,
+      "visibility": "known",
+      "hideParentage": false
+    },
+    {
+      "id": "v4",
+      "name": "Thane Draven",
+      "house": "Draven",
+      "nation": "Veyrenne",
+      "title": "Prince",
+      "birthYear": 1206,
       "isAlive": true,
       "parentIds": [
-        "p8",
-        "p13"
+        "v2",
+        "v3"
       ],
       "spouseIds": [],
       "successionOrder": 1,
-      "notes": "Heir apparent.",
+      "notes": "Heir to the Veyrenne throne.",
       "tags": [
         "heir"
       ],
-      "generation": 3,
-      "visibility": "known",
-      "hideParentage": false
-    },
-    {
-      "id": "p15",
-      "name": "Bram Valcrest",
-      "house": "Valcrest",
-      "nation": "Astyria",
-      "title": "Prince of Astyria",
-      "birthYear": 1483,
-      "isAlive": true,
-      "parentIds": [
-        "p8",
-        "p13"
-      ],
-      "spouseIds": [],
-      "successionOrder": 2,
-      "notes": "Fostered in Meruvia.",
-      "tags": [],
-      "generation": 3,
+      "generation": 1,
       "visibility": "known",
       "hideParentage": false
     }
