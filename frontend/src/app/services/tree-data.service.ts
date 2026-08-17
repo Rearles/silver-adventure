@@ -5,7 +5,7 @@ import type { FilteredPerson } from '../models/projection';
 import type { WorldPeopleFile } from '../models/world';
 import { ViewModeService } from './view-mode.service';
 
-export const DEFAULT_WORLD = 'astyria';
+export const DEFAULT_WORLD = 'world';
 
 /**
  * Loads, edits, and saves one world's people, and derives the player-facing

@@ -341,13 +341,13 @@ public static class Program
               bulk-edit  Set fields across a filtered selection of people.
 
             VALIDATE
-              dynasty-tools validate --world ../data/astyria.json [--events <path>] [--strict]
+              dynasty-tools validate --world ../data/world.json [--events <path>] [--strict]
 
               The paired {world}-events.json is validated automatically when present.
               --strict also fails on warnings (useful in a pre-commit hook).
 
             IMPORT
-              dynasty-tools import --csv people.csv --world ../data/astyria.json
+              dynasty-tools import --csv people.csv --world ../data/world.json
                                    [--replace] [--dry-run] [--force]
 
               Merges on id: existing people are updated, new ids appended. An existing
@@ -361,7 +361,7 @@ public static class Program
               Blank id cells get a generated p{n} id.
 
             BULK-EDIT
-              dynasty-tools bulk-edit --world ../data/astyria.json
+              dynasty-tools bulk-edit --world ../data/world.json
                                       --where house=Valcrest --set visibility=hidden
                                       [--id p1 --id p2] [--all] [--dry-run]
 

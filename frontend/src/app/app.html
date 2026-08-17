@@ -1,6 +1,8 @@
 <header class="app-header">
   <div class="brand">
-    <div class="eyebrow">{{ eyebrow() }}</div>
+    @if (eyebrow(); as label) {
+      <div class="eyebrow">{{ label }}</div>
+    }
     <h1>{{ ledgerTitle() }}</h1>
   </div>
 

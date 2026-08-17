@@ -61,7 +61,7 @@ public static class WorldJson
 
     /// <summary>
     /// Derives the events path that pairs with a people path:
-    /// <c>data/astyria.json</c> → <c>data/astyria-events.json</c>.
+    /// <c>data/world.json</c> → <c>data/world-events.json</c>.
     /// </summary>
     public static string EventsPathFor(string peoplePath)
     {

@@ -1,7 +1,16 @@
 <div class="tree-scroll" #scroller>
   @if (layout().nodes.length === 0) {
     <p class="empty-state">
-      No one matches the current filter. Clear the nation/house filter, or add a person.
+      @if (worldIsEmpty()) {
+        @if (isGmView()) {
+          No one in this world yet. Add your first person with the
+          <strong>+ Person</strong> button above, or import a CSV with the C# tool.
+        } @else {
+          This world has no one in it yet.
+        }
+      } @else {
+        No one matches the current filter. Clear the nation/house filter, or add a person.
+      }
     </p>
   } @else {
     <div

@@ -7,11 +7,16 @@ node-dragging — and separates what you know as GM from what your players get t
 ```
 silver-adventure/
 ├── data/                 # Canonical world files (JSON). The single source of truth.
-│   ├── astyria.json          # People
-│   └── astyria-events.json   # Events
+│   ├── world.json           # People — starts empty
+│   └── world-events.json    # Events — starts empty
 ├── frontend/             # Angular 21 app (the tree, timeline, GM dossiers)
 └── tools/                # C# console tool (CSV import, validation, bulk edits)
 ```
+
+`data/world.json` and `data/world-events.json` start empty — `{ "people": [] }` and
+`{ "events": [] }`. Add your own people and events through the app's `+ Person` /
+`+ Event` buttons, or bulk-import a spreadsheet with the C# tool (see
+[`tools/README.md`](tools/README.md)).
 
 ## Quick start
 
@@ -31,7 +36,7 @@ always serves the canonical files. Run `npm test` for the test suite.
 ```bash
 cd tools
 dotnet build
-dotnet run --project src/DynastyTools -- validate --world ../data/astyria.json
+dotnet run --project src/DynastyTools -- validate --world ../data/world.json
 ```
 
 ## The two view modes
@@ -71,7 +76,7 @@ an ordinary `spouseIds` link.
 
 | Field | Type | Notes |
 |---|---|---|
-| `id` | string | Unique within the world. Sample data prefixes by nation: `a1…` Astyria, `v1…` Veyrenne |
+| `id` | string | Unique within the world. `p1`, `p2`, … by convention, or whatever a CSV import assigns |
 | `name` | string | |
 | `house` | string | |
 | `nation` | string | |
@@ -110,37 +115,15 @@ Events are a separate collection, cross-linked to people by id rather than neste
 | `nation` / `house` | string? | |
 | `visibility` | `"known"` \| `"hidden"` | Same meaning as on Person |
 
-## The sample world
-
-`data/astyria.json` is the cast from the reference prototypes, across two nations:
-
-- **Astyria** — House **Valcrest** (Aldric, Corin, Elara, Joran, Rowan, Tamsin), with
-  **Solenne**, **Thornwood**, and **Ashgrove** connected by marriage.
-- **Veyrenne** — House **Draven** (Baldric, Isolde, Thane) and **Marrow** (Selene).
-
-It exercises every edge the model has: two marriages for one king (Corin), two
-cross-nation in-marriages, a hidden person (**Joran Ash**, Aldric's unacknowledged
-son), and a visible person with concealed parentage (**Tamsin Valcrest**).
-
-> **Two reconciliations to be aware of.** The prototypes disagreed about Corin's
-> marriage — `dynasty-tracker.jsx` had him married to Yseult Thornwood, while the
-> overlap, dossier, and timeline prototypes all had Isolde Draven. This data treats
-> them as two marriages in sequence: Yseult first (Tamsin's mother), then Isolde in
-> 1224 (Rowan's mother). To make that coherent, three events were added that appear in
-> no prototype: Corin's first wedding (1219), Tamsin's concealed birth (1221), and
-> Yseult's death (1223). Change them freely if your canon differs.
-
 ## Filtering keeps the overlap
 
 Filtering to a house or nation does **not** strictly exclude everyone else. People
 matching the filter are *core*; anyone connected to them by marriage or parentage is
 still drawn at 55% opacity and labelled "married in — not core house", as *adjacent*.
 
-That is the whole point of one flat pool. Filter `astyria.json` to House Valcrest and
-you get 6 Valcrests plus 5 connected outsiders — Mira Solenne and Yseult Thornwood who
-married in, Isolde Draven from Veyrenne's own royal house, and the Ashgroves. A strict
-filter would hide exactly the relationships a royal family chart exists to show —
-Isolde's Draven identity is the thing that makes the Veyrenne treaty legible.
+That is the whole point of one flat pool. Filter to one house and an in-married
+spouse from another house still shows up, dimmed, rather than vanishing — a strict
+filter would hide exactly the relationship a royal family chart exists to show.
 
 ## Adding a nation or house
 
@@ -148,7 +131,7 @@ Houses and nations are not configured anywhere — they are just strings on peop
 the filter chips are derived from whatever values exist. So:
 
 1. **Add a person** with the new `house` / `nation` value (the `+ Person` button in
-   GM View, or a row in a CSV import). The dropdowns pick it up immediately.
+   GM View, or a row in a CSV import). The filter chips pick it up immediately.
 2. **Link them in.** Give them a `spouseIds` or `parentIds` reference to someone who
    already exists, and the new house appears alongside the old one in the chart —
    dimmed when you filter to the other house, which is the behaviour you want.
@@ -162,9 +145,9 @@ the filter chips are derived from whatever values exist. So:
 ### House colours
 
 Each house gets an accent colour used on its card border, its dot, and its filter
-chip. The six houses in the sample world use a hand-picked palette
-(`frontend/src/app/models/house-colors.ts`); any house you invent later is hashed to a
-stable colour from the same range, so nothing needs registering.
+chip, assigned deterministically by hashing the house name
+(`frontend/src/app/models/house-colors.ts`). Nothing needs registering — invent a
+house and it has a stable, on-palette colour immediately.
 
 ### Adding a whole new world
 
@@ -201,9 +184,11 @@ there are unsaved changes.
   of the two things this data model needs most: multiple marriages per person, and
   dimmed *adjacent*-tier nodes. Layout geometry is a pure function in
   `frontend/src/app/models/tree-layout.ts`, unit-tested independently of rendering.
-- **Visual language** is ported from the reference React prototypes: parchment cards
-  on a warm near-black ground, per-house border colours, antique gold for headings and
-  marriage lines, deep red for GM View and dark green for Player Preview. Icons come
-  from `lucide-angular`, the official Angular port of the prototype's icon set.
+- **Visual language** is ported from the original reference React prototypes:
+  parchment cards on a warm near-black ground, per-house border colours, antique gold
+  for headings and marriage lines, deep red for GM View and dark green for Player
+  Preview. Icons come from `lucide-angular`, the official Angular port of the
+  prototypes' icon set.
 - **Tests:** 50 in the app (`cd frontend && npm test`), 68 in the tool
-  (`cd tools && dotnet test`).
+  (`cd tools && dotnet test`) — all against synthetic fixtures, none depend on the
+  world data actually containing anyone.

@@ -7,9 +7,9 @@ import { ViewModeService } from '../../services/view-mode.service';
  * Nation/house filter for the tree and timeline.
  *
  * Writes to the shared `ViewModeService`, so the tree and the timeline react
- * together. It reports the adjacent count explicitly, because "12 in House
- * Valcrest + 3 connected by marriage" explains the dimmed cards on the chart far
- * better than a single total would.
+ * together. It reports the adjacent count explicitly, because "12 in focus + 3
+ * connected by marriage" explains the dimmed cards on the chart far better than
+ * a single total would.
  */
 @Component({
   selector: 'app-filter-bar',

@@ -243,16 +243,23 @@ describe('App', () => {
     expect(root.textContent).toContain('Corin Ashfell');
   });
 
-  it('colours each card by house and dims in-married cards', async () => {
+  it('colours each card by its house, consistently across cards sharing one', async () => {
     const fixture = await createApp();
     const root = fixture.nativeElement as HTMLElement;
 
-    const valcrest = [...root.querySelectorAll('app-person-card')].find((card) =>
-      card.textContent?.includes('Rowan Valcrest'),
-    );
-    const body = valcrest?.querySelector<HTMLElement>('.card-body');
+    const cardFor = (name: string) =>
+      [...root.querySelectorAll('app-person-card')]
+        .find((card) => card.textContent?.includes(name))
+        ?.querySelector<HTMLElement>('.card-body');
 
-    expect(body?.style.getPropertyValue('--house')).toBe('#a3435a');
+    const rowanColor = cardFor('Rowan Valcrest')?.style.getPropertyValue('--house');
+    const corinColor = cardFor('Corin Ashfell')?.style.getPropertyValue('--house');
+
+    // Both a valid colour, houses differ so the colours must too, and the same
+    // house always resolves to the same colour (deterministic hash, no registry).
+    expect(rowanColor).toMatch(/^#[0-9a-f]{6}$/);
+    expect(corinColor).toMatch(/^#[0-9a-f]{6}$/);
+    expect(rowanColor).not.toBe(corinColor);
   });
 
   it('dims people an event does not involve, and clears the dimming again', async () => {

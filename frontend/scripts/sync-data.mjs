@@ -29,11 +29,6 @@ async function main() {
   }
 
   const worldFiles = entries.filter((name) => name.endsWith('.json'));
-  if (worldFiles.length === 0) {
-    console.error(`[sync-data] No .json world files found in ${source}.`);
-    process.exitCode = 1;
-    return;
-  }
 
   // Rebuild the mirror from scratch so a world deleted upstream does not linger.
   await rm(destination, { recursive: true, force: true });
@@ -41,6 +36,16 @@ async function main() {
 
   for (const name of worldFiles) {
     await cp(join(source, name), join(destination, name));
+  }
+
+  if (worldFiles.length === 0) {
+    // Not fatal: a brand-new or fully-wiped repo has no world file yet, and the
+    // app's own load error + empty-world state is the right recovery path — a
+    // failed `npm start` here would only get in the way of starting fresh.
+    console.warn(
+      `[sync-data] No .json world files found in ${source} — starting with an empty public/data/.`,
+    );
+    return;
   }
 
   console.log(

@@ -115,7 +115,17 @@
 
   <div class="spine-scroll">
     @if (events().length === 0) {
-      <p class="empty-state">No events match the current filters.</p>
+      <p class="empty-state">
+        @if (worldIsEmpty()) {
+          @if (isGmView()) {
+            No events recorded yet. Add one with the <strong>+ Event</strong> button above.
+          } @else {
+            This world has no events recorded yet.
+          }
+        } @else {
+          No events match the current filters.
+        }
+      </p>
     } @else {
       @for (group of grouped(); track group.era + group.events[0].id) {
         <h3 class="era">{{ group.era }}</h3>

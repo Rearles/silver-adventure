@@ -1,23 +1,13 @@
 /**
  * Per-house accent colours.
  *
- * The named houses use the exact palette from the reference prototype. Any house
- * the GM invents later falls back to a deterministic hash into the same family of
- * hues, so a new house gets a stable, on-palette colour without anyone having to
- * register it — houses are just strings on people, and nothing in the app keeps a
- * registry of them.
+ * Houses are just strings on people — nothing in the app registers them — so
+ * colours are assigned deterministically from a fixed ramp by hashing the house
+ * name. The same house always gets the same colour within a session and across
+ * reloads, without any setup: invent a house in the person form or a CSV import
+ * and it immediately has a stable, on-palette colour.
  */
-const KNOWN_HOUSE_COLORS: Readonly<Record<string, string>> = {
-  Valcrest: '#a3435a',
-  Solenne: '#4a8577',
-  Thornwood: '#7a5b8c',
-  Ashgrove: '#5c8c5c',
-  Draven: '#3d6ea8',
-  Marrow: '#8c6a3f',
-};
-
-/** Fallback ramp, drawn from the same muted heraldic range as the named houses. */
-const FALLBACK_HOUSE_COLORS: readonly string[] = [
+const HOUSE_COLOR_RAMP: readonly string[] = [
   '#a3435a',
   '#4a8577',
   '#7a5b8c',
@@ -46,13 +36,5 @@ export function houseColor(house: string): string {
   const trimmed = house.trim();
   if (trimmed === '') return NO_HOUSE_COLOR;
 
-  const known = KNOWN_HOUSE_COLORS[trimmed];
-  if (known !== undefined) return known;
-
-  return FALLBACK_HOUSE_COLORS[hash(trimmed) % FALLBACK_HOUSE_COLORS.length];
-}
-
-/** The houses with hand-picked colours, for docs and tests. */
-export function namedHouses(): string[] {
-  return Object.keys(KNOWN_HOUSE_COLORS);
+  return HOUSE_COLOR_RAMP[hash(trimmed) % HOUSE_COLOR_RAMP.length];
 }

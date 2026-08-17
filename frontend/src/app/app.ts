@@ -45,16 +45,25 @@ export class App {
   readonly isPlayerPreview = this.viewMode.isPlayerPreview;
   readonly world = this.treeData.world;
 
-  /** "House Valcrest — Dynasty Ledger" when a house is in focus. */
+  /** "House {name} — Dynasty Ledger" when a house is in focus. */
   readonly ledgerTitle = computed<string>(() => {
     const house = this.viewMode.filter().house;
     return house === null ? 'Dynasty Ledger' : `House ${house} — Dynasty Ledger`;
   });
 
-  /** The eyebrow names the nation in focus, or the world when unfiltered. */
+  /**
+   * The eyebrow names the nation in focus, or a nation-count summary when
+   * unfiltered — never the internal world/file id, which is not meant to be
+   * player- or GM-facing text.
+   */
   readonly eyebrow = computed<string>(() => {
     const nation = this.viewMode.filter().nation;
-    return nation === null ? this.treeData.world() : `Kingdom of ${nation}`;
+    if (nation !== null) return `Kingdom of ${nation}`;
+
+    const nations = this.treeData.nations();
+    if (nations.length === 0) return '';
+    if (nations.length === 1) return nations[0];
+    return `${nations.length} Nations`;
   });
   readonly loading = this.treeData.loading;
   readonly loadError = this.treeData.error;

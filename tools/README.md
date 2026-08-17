@@ -18,7 +18,7 @@ For convenience, publish a single binary and drop it on your PATH:
 
 ```bash
 dotnet publish src/DynastyTools -c Release -o ./bin
-./bin/DynastyTools validate --world ../data/astyria.json
+./bin/DynastyTools validate --world ../data/world.json
 ```
 
 Examples below use `dotnet run --project src/DynastyTools --` as the invocation.
@@ -26,7 +26,7 @@ Examples below use `dotnet run --project src/DynastyTools --` as the invocation.
 ## `validate`
 
 ```bash
-dotnet run --project src/DynastyTools -- validate --world ../data/astyria.json [--strict]
+dotnet run --project src/DynastyTools -- validate --world ../data/world.json [--strict]
 ```
 
 Checks a world and reports findings by severity. The paired `{world}-events.json` is
@@ -65,13 +65,13 @@ reports rather than refuses:
 `--strict` makes warnings fail too, which is what you want in a pre-commit hook:
 
 ```bash
-dotnet run --project src/DynastyTools -- validate --world ../data/astyria.json --strict
+dotnet run --project src/DynastyTools -- validate --world ../data/world.json --strict
 ```
 
 ## `import`
 
 ```bash
-dotnet run --project src/DynastyTools -- import --csv people.csv --world ../data/astyria.json
+dotnet run --project src/DynastyTools -- import --csv people.csv --world ../data/world.json
 ```
 
 Merges CSV rows into an existing world, matching on `id`: known ids are updated, new
@@ -110,7 +110,7 @@ rather than aborting the whole file.
 ## `bulk-edit`
 
 ```bash
-dotnet run --project src/DynastyTools -- bulk-edit --world ../data/astyria.json \
+dotnet run --project src/DynastyTools -- bulk-edit --world ../data/world.json \
   --where house=Valcrest --set visibility=hidden --dry-run
 ```
 
@@ -127,13 +127,13 @@ writing. An unfiltered edit would rewrite the whole world, so it requires an exp
 
 ```bash
 # Hide a whole house ahead of a reveal
-... bulk-edit --world ../data/astyria.json --where house=Ashfell --set visibility=hidden
+... bulk-edit --world ../data/world.json --where house=Ashfell --set visibility=hidden
 
 # Tag a cadet branch
-... bulk-edit --world ../data/astyria.json --where nation=Meruvia --set addTag=cadet-branch
+... bulk-edit --world ../data/world.json --where nation=Meruvia --set addTag=cadet-branch
 
 # Fix two specific people
-... bulk-edit --world ../data/astyria.json --id p11 --id p12 --set generation=2
+... bulk-edit --world ../data/world.json --id p11 --id p12 --set generation=2
 ```
 
 ## Exit codes

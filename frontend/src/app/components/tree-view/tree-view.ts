@@ -39,6 +39,13 @@ export class TreeView {
 
   readonly layout = computed(() => layoutTree(this.treeData.filteredPeople()));
 
+  /**
+   * Distinguishes "the world has no one at all" from "the filter matched no
+   * one" — an empty tree needs different guidance in each case, and the
+   * former is expected right after wiping or starting a new world.
+   */
+  readonly worldIsEmpty = computed<boolean>(() => this.treeData.count() === 0);
+
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
   constructor() {

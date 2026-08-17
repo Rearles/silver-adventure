@@ -49,6 +49,9 @@ export class TimelineView {
     return eventIcon(type);
   }
 
+  /** Distinguishes "no events exist yet" from "filters matched none". */
+  readonly worldIsEmpty = computed<boolean>(() => this.timelineData.gmEvents().length === 0);
+
   colorFor(type: DynastyEventType): string {
     return eventColor(type);
   }
