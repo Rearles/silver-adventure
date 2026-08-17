@@ -1,0 +1,7 @@
+id,name,house,nation,title,birthYear,deathYear,isAlive,parentIds,spouseIds,successionOrder,notes,tags,generation,visibility,hideParentage
+k1,Torvald Greymoor,Greymoor,Kaldros,King Torvald I,1440,1508,no,,k2,1,Founded the Greymoor line.,monarch;founder,0,known,no
+k2,Ysolde of Fenmark,Fenmark,Vareth,Queen Consort of Kaldros,1445,1512,no,,k1,,"Married in from Vareth, sealing the Fenmark pact.",consort;foreign-born,0,known,no
+k3,Bertrand Greymoor,Greymoor,Kaldros,King Bertrand II,1470,,yes,k1;k2,,1,Reigning monarch.,monarch;reigning,1,known,no
+k4,Alys Greymoor,Greymoor,Kaldros,Princess of Kaldros,1474,,yes,k1;k2,,2,,,1,known,no
+k5,Wren Ashcroft,Ashcroft,Kaldros,Ward of Ashcroft,1472,,yes,k1,,,"Publicly an Ashcroft ward; the parentage is contested.",noble,1,known,yes
+k6,The Fenmark Child,Fenmark,Vareth,Unacknowledged,1476,,yes,k2,,,Existence concealed.,secret,1,hidden,no

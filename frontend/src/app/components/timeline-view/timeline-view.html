@@ -1,0 +1,173 @@
+<section class="timeline">
+  <header class="timeline-header">
+    <h2>Timeline</h2>
+    @if (isGmView()) {
+      <button type="button" class="btn btn-sm" (click)="onToggleAddForm()">
+        {{ showAddForm() ? 'Cancel' : '+ Event' }}
+      </button>
+    }
+  </header>
+
+  <div class="controls">
+    <div class="field">
+      <label for="tl-from">From year</label>
+      <input
+        id="tl-from"
+        type="number"
+        [value]="yearRange().from ?? ''"
+        [attr.placeholder]="yearBounds()?.min ?? ''"
+        (change)="onYearFromChange($any($event.target).value)"
+      />
+    </div>
+    <div class="field">
+      <label for="tl-to">To year</label>
+      <input
+        id="tl-to"
+        type="number"
+        [value]="yearRange().to ?? ''"
+        [attr.placeholder]="yearBounds()?.max ?? ''"
+        (change)="onYearToChange($any($event.target).value)"
+      />
+    </div>
+    <button
+      type="button"
+      class="btn btn-sm"
+      [disabled]="yearRange().from === null && yearRange().to === null"
+      (click)="onClearYears()"
+    >
+      Clear years
+    </button>
+  </div>
+
+  @if (selectedPersonName(); as personName) {
+    <div class="person-filter">
+      <span>Events involving <strong>{{ personName }}</strong></span>
+      <button type="button" class="btn btn-sm" (click)="onClearPersonFilter()">Show all</button>
+    </div>
+  }
+
+  @if (isGmView() && hiddenCount() > 0) {
+    <p class="hidden-note">{{ hiddenCount() }} event(s) hidden from players</p>
+  }
+
+  @if (error(); as message) {
+    <p class="error-text load-error">{{ message }}</p>
+  }
+
+  @if (isGmView() && showAddForm()) {
+    <form class="add-form" [formGroup]="addForm" (ngSubmit)="onAddEvent()">
+      <div class="field">
+        <label for="tl-title">Title *</label>
+        <input id="tl-title" formControlName="title" />
+      </div>
+      <div class="add-row">
+        <div class="field">
+          <label for="tl-type">Type</label>
+          <select id="tl-type" formControlName="type">
+            @for (type of eventTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="tl-year">Year *</label>
+          <input id="tl-year" type="number" formControlName="year" />
+        </div>
+      </div>
+      <div class="add-row">
+        <div class="field">
+          <label for="tl-era">Era</label>
+          <input id="tl-era" formControlName="era" />
+        </div>
+        <div class="field">
+          <label for="tl-visibility">Visibility</label>
+          <select id="tl-visibility" formControlName="visibility">
+            <option value="known">Known</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </div>
+      </div>
+      <div class="add-row">
+        <div class="field">
+          <label for="tl-nation">Nation</label>
+          <input id="tl-nation" formControlName="nation" />
+        </div>
+        <div class="field">
+          <label for="tl-house">House</label>
+          <input id="tl-house" formControlName="house" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="tl-desc">Description</label>
+        <textarea id="tl-desc" formControlName="description"></textarea>
+      </div>
+      @if (selectedPersonName(); as personName) {
+        <p class="add-hint">Will be linked to {{ personName }}.</p>
+      } @else {
+        <p class="add-hint">Select a person in the tree first to link this event to them.</p>
+      }
+      <button type="submit" class="btn btn-primary">Add event</button>
+    </form>
+  }
+
+  <div class="spine">
+    @if (events().length === 0) {
+      <p class="empty-state">No events match the current filters.</p>
+    } @else {
+      @for (group of grouped(); track group.era + group.events[0].id) {
+        <h3 class="era">{{ group.era }}</h3>
+        @for (event of group.events; track event.id) {
+          <article
+            class="event"
+            [class.is-selected]="selectedEventId() === event.id"
+            [class.is-hidden-record]="event.visibility === 'hidden'"
+          >
+            <button type="button" class="event-main" (click)="onSelectEvent(event)">
+              <span class="year">{{ event.year }}</span>
+              <span class="body">
+                <span class="title-row">
+                  <span class="title">{{ event.title }}</span>
+                  @if (event.visibility === 'hidden') {
+                    <span class="badge-redacted">REDACTED</span>
+                  }
+                </span>
+                <span class="type">{{ event.type }}</span>
+                @if (event.description) {
+                  <span class="desc">{{ event.description }}</span>
+                }
+                @if (event.relatedPersonIds.length > 0) {
+                  <span class="people">
+                    @for (personId of event.relatedPersonIds; track personId) {
+                      <span class="person-chip">{{ nameFor(personId) }}</span>
+                    }
+                  </span>
+                }
+              </span>
+            </button>
+
+            @if (isGmView()) {
+              <div class="event-actions">
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [title]="event.visibility === 'hidden' ? 'Reveal to players' : 'Hide from players'"
+                  (click)="onToggleVisibility(event)"
+                >
+                  {{ event.visibility === 'hidden' ? '◌' : '👁' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger"
+                  title="Delete event"
+                  (click)="onDelete(event)"
+                >
+                  ✕
+                </button>
+              </div>
+            }
+          </article>
+        }
+      }
+    }
+  </div>
+</section>

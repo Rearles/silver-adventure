@@ -1,0 +1,262 @@
+import { TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { App } from './app';
+
+/**
+ * Integration tests for the one guarantee the whole app exists to provide:
+ * nothing GM-only may reach the DOM in Player Preview.
+ *
+ * These drive the real component tree against a stubbed `fetch`, so they cover the
+ * template gating rather than just the projection functions.
+ */
+
+const SECRET_TOKEN = 'ZZ_SECRET_MARKER_ZZ';
+const HIDDEN_NAME = 'ZZ_HIDDEN_PERSON_ZZ';
+const HIDDEN_EVENT = 'ZZ_HIDDEN_EVENT_ZZ';
+
+const worldPeople = {
+  people: [
+    {
+      id: 'p1',
+      name: 'Rowan Valcrest',
+      house: 'Valcrest',
+      nation: 'Astyria',
+      title: 'King',
+      isAlive: false,
+      parentIds: [],
+      spouseIds: [],
+      generation: 0,
+      visibility: 'known',
+      hideParentage: false,
+      gmNotes: { secrets: SECRET_TOKEN, motivations: SECRET_TOKEN },
+    },
+    {
+      id: 'p2',
+      name: HIDDEN_NAME,
+      house: 'Valcrest',
+      nation: 'Astyria',
+      isAlive: true,
+      parentIds: ['p1'],
+      spouseIds: [],
+      generation: 1,
+      visibility: 'hidden',
+      hideParentage: false,
+    },
+    {
+      id: 'p3',
+      name: 'Corin Ashfell',
+      house: 'Ashfell',
+      nation: 'Astyria',
+      isAlive: true,
+      parentIds: ['p1'],
+      spouseIds: [],
+      generation: 1,
+      visibility: 'known',
+      hideParentage: true,
+    },
+  ],
+};
+
+const worldEvents = {
+  events: [
+    {
+      id: 'e1',
+      title: 'Coronation of Rowan',
+      type: 'coronation',
+      year: 1468,
+      relatedPersonIds: ['p1'],
+      nation: 'Astyria',
+      house: 'Valcrest',
+      visibility: 'known',
+    },
+    {
+      id: 'e2',
+      title: HIDDEN_EVENT,
+      type: 'other',
+      year: 1470,
+      relatedPersonIds: ['p1', 'p2'],
+      visibility: 'hidden',
+    },
+  ],
+};
+
+function stubFetch(): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: unknown) => {
+      const url = String(input);
+      const body = url.includes('-events') ? worldEvents : worldPeople;
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }),
+  );
+}
+
+async function createApp() {
+  const fixture = TestBed.createComponent(App);
+  await fixture.whenStable();
+  fixture.detectChanges();
+  await fixture.whenStable();
+  return fixture;
+}
+
+/** Clicks the button whose title attribute matches, if present. */
+function clickByTitle(root: HTMLElement, title: string): boolean {
+  const button = root.querySelector<HTMLButtonElement>(`button[title="${title}"]`);
+  if (button === null) return false;
+  button.click();
+  return true;
+}
+
+function clickByText(root: HTMLElement, text: string): boolean {
+  const button = [...root.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === text,
+  );
+  if (button === undefined) return false;
+  button.click();
+  return true;
+}
+
+describe('App', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    stubFetch();
+    await TestBed.configureTestingModule({ imports: [App] }).compileComponents();
+  });
+
+  it('creates the app and loads the world', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('h1')?.textContent).toContain('Dynasty Tracker');
+    expect(root.textContent).toContain('Rowan Valcrest');
+  });
+
+  it('shows hidden people as redacted records in GM View', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.textContent).toContain(HIDDEN_NAME);
+    expect(root.textContent).toContain('REDACTED');
+  });
+
+  it('removes hidden people entirely in Player Preview', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(clickByText(root, 'Player Preview')).toBe(true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root.textContent).not.toContain(HIDDEN_NAME);
+    expect(root.textContent).not.toContain('REDACTED');
+    // The known people are still on the chart.
+    expect(root.textContent).toContain('Rowan Valcrest');
+    expect(root.textContent).toContain('Corin Ashfell');
+  });
+
+  it('removes hidden events in Player Preview but keeps known ones', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.textContent).toContain(HIDDEN_EVENT);
+
+    clickByText(root, 'Player Preview');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root.textContent).not.toContain(HIDDEN_EVENT);
+    expect(root.textContent).toContain('Coronation of Rowan');
+  });
+
+  it('exposes the GM dossier in GM View, secrets included', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(clickByTitle(root, 'GM dossier')).toBe(true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root.querySelector('app-gm-dossier')).not.toBeNull();
+    // The secret is present in the GM-facing DOM, as an input value.
+    const values = [...root.querySelectorAll('input, textarea')].map(
+      (element) => (element as HTMLInputElement | HTMLTextAreaElement).value,
+    );
+    expect(values.some((value) => value.includes(SECRET_TOKEN))).toBe(true);
+  });
+
+  it('never renders the dossier component, or any gmNotes value, in Player Preview', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    // Open the dossier first, so switching mode has something to tear down.
+    clickByTitle(root, 'GM dossier');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(root.querySelector('app-gm-dossier')).not.toBeNull();
+
+    clickByText(root, 'Player Preview');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Not merely hidden — absent from the component tree.
+    expect(root.querySelector('app-gm-dossier')).toBeNull();
+    expect(root.querySelector('app-person-form')).toBeNull();
+
+    // No GM string survives anywhere: text, attributes, or control values.
+    expect(root.innerHTML).not.toContain(SECRET_TOKEN);
+    const values = [...root.querySelectorAll('input, textarea')].map(
+      (element) => (element as HTMLInputElement | HTMLTextAreaElement).value,
+    );
+    expect(values.some((value) => value.includes(SECRET_TOKEN))).toBe(false);
+  });
+
+  it('offers no GM affordances at all in Player Preview', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('button[title="GM dossier"]')).not.toBeNull();
+
+    clickByText(root, 'Player Preview');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root.querySelector('button[title="GM dossier"]')).toBeNull();
+    expect(root.querySelector('button[title="Edit person"]')).toBeNull();
+    expect(root.querySelector('button[title="Hide from players"]')).toBeNull();
+  });
+
+  it('does not badge concealed parentage in Player Preview', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    // GM View marks Corin's concealed parentage so the GM can see the state.
+    expect(root.querySelectorAll('.badge-parentage').length).toBe(1);
+
+    clickByText(root, 'Player Preview');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // In Player Preview the badge would itself reveal whose parentage is secret.
+    expect(root.querySelectorAll('.badge-parentage').length).toBe(0);
+    expect(root.textContent).toContain('Corin Ashfell');
+  });
+
+  it('drops the rumoured parentage connector in Player Preview', async () => {
+    const fixture = await createApp();
+    const root = fixture.nativeElement as HTMLElement;
+
+    // Corin has hideParentage, so GM View draws a dashed "rumoured" link.
+    expect(root.querySelectorAll('path.link-rumoured').length).toBe(1);
+
+    clickByText(root, 'Player Preview');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root.querySelectorAll('path.link-rumoured').length).toBe(0);
+    // Corin himself is still rendered — he just loses the line upward.
+    expect(root.textContent).toContain('Corin Ashfell');
+  });
+});

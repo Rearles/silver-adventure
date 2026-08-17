@@ -1,0 +1,102 @@
+<!-- Defensive: this component should never be instantiated outside GM View.
+     The shell gates it with @if; this guard means even a mistaken caller renders
+     nothing rather than leaking prep material. -->
+@if (isGmView()) {
+  <section class="dossier" [formGroup]="form">
+    <header class="dossier-header">
+      <div class="who">
+        <span class="gm-tag">GM only</span>
+        <h2>{{ person()?.name ?? 'Unknown person' }}</h2>
+        @if (person()?.title) {
+          <p class="subtitle">{{ person()?.title }}</p>
+        }
+      </div>
+      <button type="button" class="btn btn-sm" (click)="onClose()" aria-label="Close dossier">
+        ✕
+      </button>
+    </header>
+
+    @if (person(); as subject) {
+      <div class="flags">
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="subject.visibility === 'hidden'"
+          (click)="onToggleVisibility()"
+        >
+          {{ subject.visibility === 'hidden' ? 'Hidden from players' : 'Known to players' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="subject.hideParentage"
+          (click)="onToggleHideParentage()"
+        >
+          {{ subject.hideParentage ? 'Parentage hidden' : 'Parentage shown' }}
+        </button>
+      </div>
+    }
+
+    <div class="dossier-body">
+      <div class="field">
+        <label for="gd-traits">Personality traits (comma separated)</label>
+        <input id="gd-traits" formControlName="personalityTraits" />
+      </div>
+
+      <div class="field">
+        <label for="gd-physical">Physical description</label>
+        <textarea id="gd-physical" formControlName="physicalDescription"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="gd-allies">Allies (names, free text, or person ids)</label>
+        <input id="gd-allies" formControlName="allies" />
+        @if (allyLabels().length > 0) {
+          <p class="resolved">{{ allyLabels().join(' · ') }}</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="gd-enemies">Enemies (names, free text, or person ids)</label>
+        <input id="gd-enemies" formControlName="enemies" />
+        @if (enemyLabels().length > 0) {
+          <p class="resolved">{{ enemyLabels().join(' · ') }}</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="gd-motivations">Motivations</label>
+        <textarea id="gd-motivations" formControlName="motivations"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="gd-goals">Goals</label>
+        <textarea id="gd-goals" formControlName="goals"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="gd-ambitions">Ambitions</label>
+        <textarea id="gd-ambitions" formControlName="ambitions"></textarea>
+      </div>
+
+      <div class="field secrets">
+        <label for="gd-secrets">Secrets</label>
+        <textarea id="gd-secrets" formControlName="secrets" rows="5"></textarea>
+        <p class="hint">
+          Your own prep notes. Separate from the player-facing hidden/known state above.
+        </p>
+      </div>
+    </div>
+
+    <footer class="dossier-footer">
+      @if (form.dirty) {
+        <span class="dirty-flag">Unsaved</span>
+      }
+      <span class="spacer"></span>
+      <button type="button" class="btn" (click)="onClose()">Close</button>
+      <button type="button" class="btn btn-primary" [disabled]="!form.dirty" (click)="onSave()">
+        Save dossier
+      </button>
+    </footer>
+  </section>
+}

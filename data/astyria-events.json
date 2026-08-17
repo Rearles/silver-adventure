@@ -1,0 +1,231 @@
+{
+  "events": [
+    {
+      "id": "e1",
+      "title": "Coronation of Aldric I",
+      "type": "coronation",
+      "year": 1425,
+      "era": "Founding",
+      "description": "Aldric Valcrest crowned first King of a unified Astyria.",
+      "relatedPersonIds": [
+        "p1"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e2",
+      "title": "Marriage of Aldric I and Seraphine of Doryne",
+      "type": "wedding",
+      "year": 1428,
+      "era": "Founding",
+      "description": "Sealed the first Astyrian-Meruvian alliance.",
+      "relatedPersonIds": [
+        "p1",
+        "p2"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e3",
+      "title": "Birth of Rowan Valcrest",
+      "type": "birth",
+      "year": 1430,
+      "era": "Founding",
+      "relatedPersonIds": [
+        "p3"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e4",
+      "title": "The Marchand Rising",
+      "type": "war",
+      "year": 1450,
+      "era": "The Long Feud",
+      "description": "House Marchand contests the river tolls; four years of intermittent war.",
+      "relatedPersonIds": [
+        "p1",
+        "p3",
+        "p6"
+      ],
+      "nation": "Astyria",
+      "visibility": "known"
+    },
+    {
+      "id": "e5",
+      "title": "Marriage of Rowan and Elenor Marchand",
+      "type": "wedding",
+      "year": 1452,
+      "era": "The Long Feud",
+      "description": "The marriage that ended the Marchand Rising.",
+      "relatedPersonIds": [
+        "p3",
+        "p6"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e6",
+      "title": "Death of Queen Elenor",
+      "type": "death",
+      "year": 1461,
+      "era": "The Long Feud",
+      "description": "Died in childbirth.",
+      "relatedPersonIds": [
+        "p6"
+      ],
+      "nation": "Astyria",
+      "house": "Marchand",
+      "visibility": "known"
+    },
+    {
+      "id": "e7",
+      "title": "The Ashfell Fostering",
+      "type": "other",
+      "year": 1461,
+      "era": "The Long Feud",
+      "description": "Rowan pays House Ashfell to raise his natural son Corin as their own.",
+      "relatedPersonIds": [
+        "p3",
+        "p11"
+      ],
+      "nation": "Astyria",
+      "house": "Ashfell",
+      "visibility": "hidden"
+    },
+    {
+      "id": "e8",
+      "title": "Marriage of Rowan and Lysandra Vail",
+      "type": "wedding",
+      "year": 1462,
+      "era": "The Long Feud",
+      "relatedPersonIds": [
+        "p3",
+        "p7"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e9",
+      "title": "The Concealed Birth",
+      "type": "birth",
+      "year": 1465,
+      "era": "The Long Feud",
+      "description": "Lysandra's second child is declared an ill omen by the Amber Sept and hidden at the Vail country house.",
+      "relatedPersonIds": [
+        "p12",
+        "p3",
+        "p7"
+      ],
+      "nation": "Astyria",
+      "house": "Vail",
+      "visibility": "hidden"
+    },
+    {
+      "id": "e10",
+      "title": "Death of Aldric I",
+      "type": "death",
+      "year": 1468,
+      "era": "The Long Feud",
+      "relatedPersonIds": [
+        "p1"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e11",
+      "title": "Coronation of Rowan II",
+      "type": "coronation",
+      "year": 1468,
+      "era": "Rowan's Peace",
+      "relatedPersonIds": [
+        "p3"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e12",
+      "title": "Battle of Greywater Ford",
+      "type": "battle",
+      "year": 1478,
+      "era": "Rowan's Peace",
+      "description": "Rowan takes the leg wound that lames him. Tristan's first command.",
+      "relatedPersonIds": [
+        "p3",
+        "p9"
+      ],
+      "nation": "Astyria",
+      "visibility": "known"
+    },
+    {
+      "id": "e13",
+      "title": "Marriage of Aurelia and Halden of Doryne",
+      "type": "wedding",
+      "year": 1479,
+      "era": "Rowan's Peace",
+      "description": "The second Doryne match, renewing the Meruvian pact.",
+      "relatedPersonIds": [
+        "p8",
+        "p13"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e14",
+      "title": "The Treaty of Amber",
+      "type": "treaty",
+      "year": 1486,
+      "era": "Rowan's Peace",
+      "description": "Trade terms fixed between Astyria and Meruvia.",
+      "relatedPersonIds": [
+        "p3",
+        "p13"
+      ],
+      "nation": "Astyria",
+      "visibility": "known"
+    },
+    {
+      "id": "e15",
+      "title": "Death of Rowan II",
+      "type": "death",
+      "year": 1495,
+      "era": "The Amber Crown",
+      "relatedPersonIds": [
+        "p3"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    },
+    {
+      "id": "e16",
+      "title": "Coronation of Aurelia I",
+      "type": "coronation",
+      "year": 1495,
+      "era": "The Amber Crown",
+      "description": "First queen regnant of Astyria.",
+      "relatedPersonIds": [
+        "p8"
+      ],
+      "nation": "Astyria",
+      "house": "Valcrest",
+      "visibility": "known"
+    }
+  ]
+}

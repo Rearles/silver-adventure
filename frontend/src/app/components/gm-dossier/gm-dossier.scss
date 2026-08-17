@@ -1,0 +1,113 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.dossier {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* A distinct warm edge marks this as GM-only material at a glance. */
+  border-left: 3px solid var(--accent);
+}
+
+.dossier-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+
+  h2 {
+    font-size: 17px;
+    margin-top: 4px;
+  }
+}
+
+.gm-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.flags {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+  flex-wrap: wrap;
+}
+
+.dossier-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.resolved {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.secrets {
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 12px;
+
+  > label {
+    color: var(--redacted);
+  }
+
+  textarea {
+    border-color: rgba(180, 84, 79, 0.4);
+  }
+}
+
+.hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.dossier-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+.dirty-flag {
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}

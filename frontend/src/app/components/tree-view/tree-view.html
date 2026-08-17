@@ -1,0 +1,60 @@
+<div class="tree-scroll" #scroller>
+  @if (layout().nodes.length === 0) {
+    <p class="empty-state">
+      No one matches the current filter. Clear the nation/house filter, or add a person.
+    </p>
+  } @else {
+    <div
+      class="tree-canvas"
+      [style.width.px]="layout().width"
+      [style.height.px]="layout().height"
+    >
+      <svg
+        class="links"
+        [attr.width]="layout().width"
+        [attr.height]="layout().height"
+        [attr.viewBox]="'0 0 ' + layout().width + ' ' + layout().height"
+        aria-hidden="true"
+      >
+        @for (link of layout().links; track link.id) {
+          <path
+            [attr.d]="link.path"
+            class="link"
+            [class.link-spouse]="link.kind === 'spouse'"
+            [class.link-parent]="link.kind === 'parent'"
+            [class.link-rumoured]="link.rumoured"
+          />
+        }
+      </svg>
+
+      @for (row of layout().generations; track row.generation) {
+        <div class="gen-label" [style.top.px]="row.y - 20">
+          Generation {{ row.generation }}
+        </div>
+      }
+
+      @for (node of layout().nodes; track node.person.id) {
+        <div
+          class="node"
+          [style.left.px]="node.x"
+          [style.top.px]="node.y"
+          [style.width.px]="node.width"
+          [style.height.px]="node.height"
+        >
+          <app-person-card
+            [person]="node.person"
+            [tier]="node.tier"
+            [gmView]="isGmView()"
+            [selected]="selectedPersonId() === node.person.id"
+            [highlighted]="isHighlighted(node.person.id)"
+            (select)="onSelect($event)"
+            (editPerson)="editPerson.emit($event)"
+            (openDossier)="openDossier.emit($event)"
+            (toggleVisibility)="onToggleVisibility($event)"
+            (toggleHideParentage)="onToggleHideParentage($event)"
+          />
+        </div>
+      }
+    </div>
+  }
+</div>

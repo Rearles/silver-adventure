@@ -1,0 +1,20 @@
+# Node / Angular
+node_modules/
+dist/
+.angular/
+*.tsbuildinfo
+
+# .NET
+bin/
+obj/
+*.user
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Generated: mirrored from the canonical /data directory by
+# frontend/scripts/sync-data.mjs. Never edit these by hand.
+frontend/public/data/

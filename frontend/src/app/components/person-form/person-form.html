@@ -1,0 +1,175 @@
+<form class="person-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <header class="form-header">
+    <h2>{{ heading() }}</h2>
+    <button type="button" class="btn btn-sm" (click)="onCancel()" aria-label="Close">✕</button>
+  </header>
+
+  <div class="form-body">
+    <div class="row">
+      <div class="field grow">
+        <label for="pf-name">Name *</label>
+        <input id="pf-name" formControlName="name" autocomplete="off" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <span class="error-text">A name is required.</span>
+        }
+      </div>
+      <div class="field grow">
+        <label for="pf-title">Title</label>
+        <input id="pf-title" formControlName="title" placeholder="Queen Aurelia I" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field grow">
+        <label for="pf-house">House *</label>
+        <input id="pf-house" formControlName="house" autocomplete="off" />
+        @if (form.controls.house.touched && form.controls.house.invalid) {
+          <span class="error-text">A house is required.</span>
+        }
+      </div>
+      <div class="field grow">
+        <label for="pf-nation">Nation *</label>
+        <input id="pf-nation" formControlName="nation" autocomplete="off" />
+        @if (form.controls.nation.touched && form.controls.nation.invalid) {
+          <span class="error-text">A nation is required.</span>
+        }
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="pf-birth">Birth year</label>
+        <input id="pf-birth" type="number" formControlName="birthYear" />
+      </div>
+      <div class="field">
+        <label for="pf-death">Death year</label>
+        <input id="pf-death" type="number" formControlName="deathYear" />
+      </div>
+      <div class="field">
+        <label for="pf-generation">Generation *</label>
+        <input id="pf-generation" type="number" formControlName="generation" />
+      </div>
+      <div class="field">
+        <label for="pf-succession">Succession</label>
+        <input id="pf-succession" type="number" formControlName="successionOrder" />
+      </div>
+    </div>
+
+    @if (form.errors?.['chronology']) {
+      <p class="error-text">Death year cannot precede birth year.</p>
+    }
+
+    <label class="check">
+      <input type="checkbox" formControlName="isAlive" />
+      <span>Living</span>
+    </label>
+
+    <!-- ── Parent picker ──────────────────────────────────────────────── -->
+    <div class="field">
+      <label for="pf-parent-search">Parents (up to 2)</label>
+      <div class="chips">
+        @for (id of parentIds(); track id) {
+          <span class="chip">
+            {{ nameFor(id) }}
+            <button type="button" (click)="removeParent(id)" aria-label="Remove parent">✕</button>
+          </span>
+        }
+        @if (parentIds().length === 0) {
+          <span class="chips-empty">No parents recorded</span>
+        }
+      </div>
+      @if (!parentsFull()) {
+        <input
+          id="pf-parent-search"
+          [value]="parentSearch()"
+          (input)="parentSearch.set($any($event.target).value)"
+          placeholder="Search people by name or house…"
+          autocomplete="off"
+        />
+        @if (parentSearch() !== '' && parentResults().length > 0) {
+          <ul class="results">
+            @for (candidate of parentResults(); track candidate.id) {
+              <li>
+                <button type="button" (click)="addParent(candidate.id)">
+                  <span class="r-name">{{ candidate.name }}</span>
+                  <span class="r-meta">{{ candidate.house }} · gen {{ candidate.generation }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+
+    <!-- ── Spouse picker ──────────────────────────────────────────────── -->
+    <div class="field">
+      <label for="pf-spouse-search">Spouses (multiple marriages supported)</label>
+      <div class="chips">
+        @for (id of spouseIds(); track id) {
+          <span class="chip">
+            {{ nameFor(id) }}
+            <button type="button" (click)="removeSpouse(id)" aria-label="Remove spouse">✕</button>
+          </span>
+        }
+        @if (spouseIds().length === 0) {
+          <span class="chips-empty">No marriages recorded</span>
+        }
+      </div>
+      <input
+        id="pf-spouse-search"
+        [value]="spouseSearch()"
+        (input)="spouseSearch.set($any($event.target).value)"
+        placeholder="Search people by name or house…"
+        autocomplete="off"
+      />
+      @if (spouseSearch() !== '' && spouseResults().length > 0) {
+        <ul class="results">
+          @for (candidate of spouseResults(); track candidate.id) {
+            <li>
+              <button type="button" (click)="addSpouse(candidate.id)">
+                <span class="r-name">{{ candidate.name }}</span>
+                <span class="r-meta">{{ candidate.house }} · gen {{ candidate.generation }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="field">
+      <label for="pf-tags">Tags (comma separated)</label>
+      <input id="pf-tags" formControlName="tags" placeholder="monarch, heir" />
+    </div>
+
+    <div class="field">
+      <label for="pf-notes">Notes (player-visible)</label>
+      <textarea id="pf-notes" formControlName="notes"></textarea>
+    </div>
+
+    <fieldset class="visibility">
+      <legend>Player visibility</legend>
+      <div class="field">
+        <label for="pf-visibility">Exists in player view</label>
+        <select id="pf-visibility" formControlName="visibility">
+          <option value="known">Known — players see this person</option>
+          <option value="hidden">Hidden — absent from Player Preview</option>
+        </select>
+      </div>
+      <label class="check">
+        <input type="checkbox" formControlName="hideParentage" />
+        <span>Hide parentage — visible, but players do not see who the parents are</span>
+      </label>
+    </fieldset>
+  </div>
+
+  <footer class="form-footer">
+    @if (isEditing()) {
+      <button type="button" class="btn btn-danger" (click)="onDelete()">Delete</button>
+    }
+    <span class="spacer"></span>
+    <button type="button" class="btn" (click)="onCancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary">
+      {{ isEditing() ? 'Save changes' : 'Add person' }}
+    </button>
+  </footer>
+</form>

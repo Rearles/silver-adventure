@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+select {
+  min-width: 150px;
+}
+
+.counts {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 4px auto;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.count-core {
+  color: var(--text-muted);
+}
+
+.count-adjacent {
+  color: var(--text-faint);
+  font-style: italic;
+}

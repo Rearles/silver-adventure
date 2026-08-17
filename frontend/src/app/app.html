@@ -1,0 +1,89 @@
+<header class="app-header">
+  <div class="brand">
+    <h1>Dynasty Tracker</h1>
+    <span class="world">{{ world() }}</span>
+  </div>
+
+  <div class="mode-switch" role="group" aria-label="View mode">
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="isGmView()"
+      [attr.aria-pressed]="isGmView()"
+      (click)="onSetMode('gm')"
+    >
+      GM View
+    </button>
+    <button
+      type="button"
+      class="mode-btn"
+      [class.active]="isPlayerPreview()"
+      [attr.aria-pressed]="isPlayerPreview()"
+      (click)="onSetMode('player')"
+    >
+      Player Preview
+    </button>
+  </div>
+
+  <div class="header-actions">
+    @if (isGmView()) {
+      <span class="hidden-count" title="People hidden from players">
+        {{ hiddenPeopleCount() }} hidden
+      </span>
+      <button type="button" class="btn" (click)="onAddPerson()">+ Person</button>
+      <button type="button" class="btn" [disabled]="!dirty()" (click)="onRevert()">Revert</button>
+      <button type="button" class="btn btn-primary" (click)="onSaveWorld()">
+        Save{{ dirty() ? ' *' : '' }}
+      </button>
+    } @else {
+      <span class="player-note">Projecting to players — hidden records and GM notes excluded</span>
+    }
+  </div>
+</header>
+
+@if (statusMessage(); as message) {
+  <p class="status-bar">
+    {{ message }}
+    <button type="button" class="btn btn-sm" (click)="onDismissStatus()">Dismiss</button>
+  </p>
+}
+
+@if (loadError(); as message) {
+  <p class="status-bar error">
+    Could not load the world: {{ message }}. Run <code>npm run sync-data</code> and reload.
+  </p>
+}
+
+<app-filter-bar />
+
+<main class="workspace">
+  <section class="tree-pane">
+    @if (loading()) {
+      <p class="empty-state">Loading world…</p>
+    } @else {
+      <app-tree-view (editPerson)="onEditPerson($event)" (openDossier)="onOpenDossier($event)" />
+    }
+  </section>
+
+  <aside class="timeline-pane">
+    <app-timeline-view />
+  </aside>
+</main>
+
+<!-- GM-only surfaces. In Player Preview these are not instantiated at all, so
+     neither the dossier component nor any gmNotes value reaches the DOM. -->
+@if (isGmView()) {
+  @if (formTarget(); as target) {
+    <div class="overlay" (click)="onCloseForm()"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Person details">
+      <app-person-form [personId]="target.id" (closed)="onCloseForm()" />
+    </div>
+  }
+
+  @if (dossierPersonId(); as personId) {
+    <div class="overlay" (click)="onCloseDossier()"></div>
+    <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="GM dossier">
+      <app-gm-dossier [personId]="personId" (closed)="onCloseDossier()" />
+    </aside>
+  }
+}

@@ -1,0 +1,44 @@
+<div class="filter-bar">
+  <div class="field">
+    <label for="filter-nation">Nation</label>
+    <select
+      id="filter-nation"
+      [value]="filter().nation ?? ''"
+      (change)="onNationChange($any($event.target).value)"
+    >
+      <option value="">All nations</option>
+      @for (nation of nations(); track nation) {
+        <option [value]="nation">{{ nation }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="filter-house">House</label>
+    <select
+      id="filter-house"
+      [value]="filter().house ?? ''"
+      (change)="onHouseChange($any($event.target).value)"
+    >
+      <option value="">All houses</option>
+      @for (house of houses(); track house) {
+        <option [value]="house">{{ house }}</option>
+      }
+    </select>
+  </div>
+
+  <button type="button" class="btn" [disabled]="!isFiltered()" (click)="onClear()">
+    Clear filter
+  </button>
+
+  <p class="counts">
+    @if (isFiltered()) {
+      <span class="count-core">{{ coreCount() }} in focus</span>
+      @if (adjacentCount() > 0) {
+        <span class="count-adjacent">+ {{ adjacentCount() }} connected by marriage or blood</span>
+      }
+    } @else {
+      <span class="count-core">{{ totalCount() }} people</span>
+    }
+  </p>
+</div>

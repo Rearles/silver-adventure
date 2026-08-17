@@ -1,0 +1,184 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+
+  h1 {
+    font-size: 17px;
+    letter-spacing: 0.01em;
+  }
+}
+
+.world {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--text-faint);
+}
+
+.mode-switch {
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+
+  &:hover {
+    background: var(--panel-2);
+  }
+
+  &.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+}
+
+/* In Player Preview the active pill turns cool, so the mode is unmistakable. */
+:host(.player-mode) .mode-btn.active {
+  background: var(--player-soft);
+  color: var(--player);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.hidden-count {
+  font-size: 11px;
+  color: var(--redacted);
+  border: 1px solid var(--redacted);
+  background: var(--redacted-soft);
+  border-radius: 3px;
+  padding: 2px 7px;
+}
+
+.player-note {
+  font-size: 12px;
+  color: var(--player);
+  font-style: italic;
+}
+
+/* A standing reminder of which mode is live, visible from across the room. */
+:host(.player-mode) .app-header {
+  border-bottom: 2px solid var(--player);
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 12px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent-line);
+  color: var(--accent);
+
+  &.error {
+    background: var(--redacted-soft);
+    border-color: var(--redacted);
+    color: var(--redacted);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+}
+
+/* ── Workspace ───────────────────────────────────────────────────────────── */
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.tree-pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.timeline-pane {
+  flex: 0 0 336px;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    flex-direction: column;
+  }
+
+  .timeline-pane {
+    flex: 0 0 300px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* ── Overlays ────────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 9, 12, 0.62);
+  z-index: 20;
+}
+
+.modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(88vh, 860px);
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 21;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(430px, calc(100vw - 24px));
+  background: var(--panel);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: var(--shadow);
+  z-index: 21;
+}

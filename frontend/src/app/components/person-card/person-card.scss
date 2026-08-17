@@ -1,0 +1,179 @@
+:host {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Raise the hovered card above its neighbours so the controls that hang below it
+   are never covered by an adjacent node. */
+:host(:hover),
+:host(:focus-within) {
+  z-index: 10;
+}
+
+.card-body {
+  position: relative;
+  height: 100%;
+  padding: 7px 9px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+
+  &:hover {
+    background: var(--panel-2);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 46px;
+}
+
+.title {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.house {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.alive-dot {
+  color: var(--alive);
+  margin-left: auto;
+  font-size: 8px;
+}
+
+.badges {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.badge {
+  font-size: 9px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.badge-redacted {
+  background: var(--redacted-soft);
+  border-color: var(--redacted);
+  color: var(--redacted);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.badge-parentage {
+  background: var(--panel-2);
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+}
+
+.badge-heir {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+/* ── Adjacent tier: in-married from another house, rendered secondary ────── */
+:host(.is-adjacent) .card-body {
+  background: transparent;
+  border-style: dashed;
+  border-left-color: var(--border-strong);
+  opacity: 0.62;
+}
+
+:host(.is-adjacent) .name {
+  font-weight: 500;
+}
+
+/* ── Hidden record: redacted treatment, GM View only ────────────────────── */
+:host(.is-hidden-record) .card-body {
+  border-color: var(--redacted);
+  border-left-color: var(--redacted);
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(180, 84, 79, 0.11) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+:host(.is-deceased) .name {
+  color: var(--text);
+  opacity: 0.86;
+}
+
+/* ── Selection & event-driven highlight ─────────────────────────────────── */
+:host(.is-selected) .card-body {
+  border-color: var(--accent);
+  border-left-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-line);
+}
+
+:host(.is-highlighted) .card-body {
+  border-color: var(--player);
+  border-left-color: var(--player);
+  box-shadow: 0 0 0 2px var(--player-soft);
+}
+
+/* ── GM controls: revealed on hover so the card stays compact ───────────── */
+.gm-controls {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+  z-index: 5;
+}
+
+:host(:hover) .gm-controls,
+:host(:focus-within) .gm-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
