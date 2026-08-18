@@ -90,17 +90,19 @@ export class App {
     void this.timelineData.load();
   }
 
-  onSetMode(mode: 'gm' | 'player'): void {
+  async onSetMode(mode: 'gm' | 'player'): Promise<void> {
     // Leaving GM View must also tear down the GM-only panels.
     if (mode === 'player') {
       this.formTarget.set(null);
       this.dossierPersonId.set(null);
     }
-    this.viewMode.setMode(mode);
+    // Entering GM View may prompt for the password — setMode no-ops back to
+    // the current mode if that's declined, so nothing further to branch on.
+    await this.viewMode.setMode(mode);
   }
 
-  onToggleMode(): void {
-    this.onSetMode(this.isGmView() ? 'player' : 'gm');
+  async onToggleMode(): Promise<void> {
+    await this.onSetMode(this.isGmView() ? 'player' : 'gm');
   }
 
   onAddPerson(): void {

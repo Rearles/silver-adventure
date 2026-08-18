@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import type { DynastyEvent } from '../models/dynasty-event';
 import {
   EMPTY_WORLD_FILTER,
@@ -6,6 +6,7 @@ import {
   type WorldFilter,
   type YearRange,
 } from '../models/world';
+import { SessionService } from './session.service';
 
 export type ViewMode = 'gm' | 'player';
 
@@ -15,12 +16,15 @@ export type ViewMode = 'gm' | 'player';
  *
  * The tree, the timeline, and dossier access all read from here, so they can
  * never drift out of sync — there is deliberately no second toggle to keep in
- * step. It holds UI state only and injects no data services, which keeps it free
- * of cycles; callers hand it the little they need (an event's related person
- * ids, for instance) rather than it reaching into the stores.
+ * step. It injects only `SessionService` (a plain token holder, no data-fetch
+ * dependencies of its own) — never the tree/timeline data stores — so there's
+ * no cycle risk; callers still hand it the little they need (an event's
+ * related person ids, for instance) rather than it reaching into the stores.
  */
 @Injectable({ providedIn: 'root' })
 export class ViewModeService {
+  private readonly session = inject(SessionService);
+
   // Defaults to 'player': a freshly-opened link (the one handed to players)
   // must land read-only, with no edit affordances or GM dossier instantiated,
   // before anyone has touched the toggle. The GM flips to 'gm' explicitly
@@ -49,23 +53,57 @@ export class ViewModeService {
   readonly highlightedPersonIds = this._highlightedPersonIds.asReadonly();
 
   /**
-   * Switches view mode.
+   * Switches view mode. Entering GM View requires a valid session — if none
+   * is held yet, this prompts for the GM password and calls `/api/auth`
+   * before switching; a wrong password, a cancelled prompt, or a network
+   * failure all leave the mode unchanged (stays in Player View). This is a
+   * UX gate, not the real security boundary: the Worker independently
+   * re-verifies the token on every write regardless (see auth.ts).
    *
    * Leaving GM View clears selection and highlights: they may point at people or
    * events that do not exist in the player projection, and carrying a stale
    * reference into Player Preview is exactly the kind of leak this app exists to
    * prevent.
    */
-  setMode(mode: ViewMode): void {
+  async setMode(mode: ViewMode): Promise<void> {
     if (this._mode() === mode) return;
+
+    if (mode === 'gm' && !this.session.isAuthenticated()) {
+      const granted = await this.requestGmAccess();
+      if (!granted) return;
+    }
+
     this._mode.set(mode);
     if (mode === 'player') {
       this.clearSelection();
     }
   }
 
-  toggleMode(): void {
-    this.setMode(this._mode() === 'gm' ? 'player' : 'gm');
+  /** Prompts for the GM password and exchanges it for a session token via /api/auth. */
+  private async requestGmAccess(): Promise<boolean> {
+    const password = globalThis.prompt('GM password:');
+    if (password === null || password === '') return false;
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (!response.ok) return false;
+
+      const body = (await response.json()) as { token?: unknown };
+      if (typeof body.token !== 'string') return false;
+
+      this.session.setToken(body.token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async toggleMode(): Promise<void> {
+    await this.setMode(this._mode() === 'gm' ? 'player' : 'gm');
   }
 
   setFilter(filter: WorldFilter): void {
