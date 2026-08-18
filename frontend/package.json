@@ -26,7 +26,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.21",
+    "@angular/build": "^22.1.4",
     "@angular/cli": "^21.2.21",
     "@angular/compiler-cli": "^21.2.0",
     "@cloudflare/workers-types": "^5.20260818.1",
