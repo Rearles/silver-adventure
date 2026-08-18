@@ -180,11 +180,42 @@
         <label for="tl-desc">Description</label>
         <textarea id="tl-desc" formControlName="description"></textarea>
       </div>
-      @if (selectedPersonName(); as personName) {
-        <p class="add-hint">Will be linked to {{ personName }}.</p>
-      } @else {
-        <p class="add-hint">Select a person in the tree first to link this event to them.</p>
-      }
+
+      <!-- ── People picker ──────────────────────────────────────────────── -->
+      <div class="field">
+        <label for="tl-person-search">People involved</label>
+        <div class="chips">
+          @for (id of relatedPersonIds(); track id) {
+            <span class="chip">
+              {{ nameFor(id) }}
+              <button type="button" (click)="removeRelatedPerson(id)" aria-label="Remove person">✕</button>
+            </span>
+          }
+          @if (relatedPersonIds().length === 0) {
+            <span class="chips-empty">No one linked yet</span>
+          }
+        </div>
+        <input
+          id="tl-person-search"
+          [value]="personSearch()"
+          (input)="personSearch.set($any($event.target).value)"
+          placeholder="Search people by name or house…"
+          autocomplete="off"
+        />
+        @if (personSearch() !== '' && personResults().length > 0) {
+          <ul class="results">
+            @for (candidate of personResults(); track candidate.id) {
+              <li>
+                <button type="button" (click)="addRelatedPerson(candidate.id)">
+                  <span class="r-name">{{ candidate.name }}</span>
+                  <span class="r-meta">{{ candidate.house }} · gen {{ candidate.generation }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
       <button type="submit" class="btn btn-primary">Add event</button>
     </form>
   }

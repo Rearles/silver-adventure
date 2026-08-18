@@ -95,6 +95,18 @@ export class TimelineView {
 
   readonly showAddForm = signal<boolean>(false);
 
+  /** Held as a signal rather than a form control, mirroring PersonForm's parent/spouse pickers — a search-and-pick chip list. */
+  readonly relatedPersonIds = signal<string[]>([]);
+  readonly personSearch = signal<string>('');
+
+  readonly personResults = computed(() => {
+    const chosen = new Set(this.relatedPersonIds());
+    return this.treeData
+      .searchByName(this.personSearch())
+      .filter((candidate) => !chosen.has(candidate.id))
+      .slice(0, 8);
+  });
+
   readonly addForm = this.formBuilder.nonNullable.group(
     {
       title: ['', [Validators.required]],
@@ -180,10 +192,23 @@ export class TimelineView {
     this.timelineData.deleteEvent(event.id);
   }
 
+  addRelatedPerson(id: string): void {
+    this.relatedPersonIds.update((current) => [...current, id]);
+    this.personSearch.set('');
+  }
+
+  removeRelatedPerson(id: string): void {
+    this.relatedPersonIds.update((current) => current.filter((personId) => personId !== id));
+  }
+
   onToggleAddForm(): void {
     this.showAddForm.update((open) => !open);
     if (this.showAddForm()) {
       const selected = this.selectedPersonId();
+      // Pre-seeded with the tree-selected person, if any — still just a starting
+      // point, not a requirement; the picker below can add or remove freely.
+      this.relatedPersonIds.set(selected === null ? [] : [selected]);
+      this.personSearch.set('');
       this.addForm.reset({
         title: '',
         type: 'other',
@@ -209,7 +234,6 @@ export class TimelineView {
       return;
     }
     const value = this.addForm.getRawValue();
-    const selected = this.selectedPersonId();
 
     // Day/month are precision on top of a year; without a year they are
     // meaningless — mirrors PersonForm's birth/death handling. startYear is
@@ -231,12 +255,14 @@ export class TimelineView {
       // (or empty) arrays until the form gains a real multi-select tag picker.
       nations: value.nation.trim() !== '' ? [value.nation.trim()] : [],
       houses: value.house.trim() !== '' ? [value.house.trim()] : [],
-      relatedPersonIds: selected === null ? [] : [selected],
+      relatedPersonIds: this.relatedPersonIds(),
       visibility: value.visibility,
       ...(value.era.trim() !== '' ? { era: value.era.trim() } : {}),
       ...(value.description.trim() !== '' ? { description: value.description.trim() } : {}),
     });
 
     this.showAddForm.set(false);
+    this.relatedPersonIds.set([]);
+    this.personSearch.set('');
   }
 }
