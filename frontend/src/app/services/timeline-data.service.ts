@@ -2,12 +2,14 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import type { DynastyEvent } from '../models/dynasty-event';
 import { toPlayerEvents } from '../models/projection';
 import type { WorldEventsFile } from '../models/world';
+import { SessionService } from './session.service';
 import { DEFAULT_WORLD, TreeDataService } from './tree-data.service';
 import { ViewModeService } from './view-mode.service';
 
 /**
  * Loads, edits, and saves one world's events, mirroring `TreeDataService` —
- * including its live-API loading (see that class for the fuller rationale).
+ * including its live-API loading and its GM-vs-player trust boundary at the
+ * Worker (see that class for the fuller rationale).
  *
  * Opens its own WebSocket to the same `/api/world/{world}/live` endpoint
  * `TreeDataService` does (one WorldRoom per world relays both kinds over
@@ -22,6 +24,7 @@ import { ViewModeService } from './view-mode.service';
 export class TimelineDataService {
   private readonly viewMode = inject(ViewModeService);
   private readonly treeData = inject(TreeDataService);
+  private readonly session = inject(SessionService);
 
   private readonly _events = signal<DynastyEvent[]>([]);
   private readonly _world = signal<string>(DEFAULT_WORLD);
@@ -118,7 +121,10 @@ export class TimelineDataService {
     }
 
     try {
-      const response = await fetch(`/api/world/${encodeURIComponent(world)}/events`, { cache: 'no-store' });
+      const response = await fetch(`/api/world/${encodeURIComponent(world)}/events`, {
+        cache: 'no-store',
+        headers: this.authHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`/api/world/${world}/events responded ${response.status}`);
       }
@@ -136,6 +142,12 @@ export class TimelineDataService {
     }
 
     this.connectLive(world);
+  }
+
+  /** Sends the GM session token, when one is held, so the Worker returns the full GM data rather than the player projection. */
+  private authHeaders(): HeadersInit {
+    const token = this.session.token();
+    return token === null ? {} : { Authorization: `Bearer ${token}` };
   }
 
   /** See TreeDataService.connectLive — same endpoint, same reconnect strategy, filtered to 'events' pushes. */
@@ -161,7 +173,7 @@ export class TimelineDataService {
       this.reconnectAttempt = 0;
     });
     socket.addEventListener('message', (event) => {
-      this.applyLivePush(String(event.data));
+      this.applyLivePush(String(event.data), world);
     });
     socket.addEventListener('close', () => {
       if (this.socket !== socket) return;
@@ -178,7 +190,16 @@ export class TimelineDataService {
     this.reconnectTimer = setTimeout(() => this.connectLive(world), delayMs);
   }
 
-  private applyLivePush(raw: string): void {
+  /**
+   * The pushed payload is always the player-filtered projection (see
+   * frontend/worker/index.ts) — a GM tab re-fetches with its session token
+   * instead of applying it directly, mirroring TreeDataService.applyLivePush.
+   */
+  private applyLivePush(raw: string, world: string): void {
+    if (this.session.isAuthenticated()) {
+      void this.refetchAuthenticated(world);
+      return;
+    }
     try {
       const message = JSON.parse(raw) as { kind?: string; payload?: string };
       if (message.kind !== 'events' || typeof message.payload !== 'string') return; // 'people' is TreeDataService's concern
@@ -188,6 +209,23 @@ export class TimelineDataService {
       this._dirty.set(false);
     } catch {
       // A malformed push isn't worth surfacing as a hard error.
+    }
+  }
+
+  /** GM-only refresh triggered by a live push: re-fetches the real (unfiltered) events with the held session token. */
+  private async refetchAuthenticated(world: string): Promise<void> {
+    try {
+      const response = await fetch(`/api/world/${encodeURIComponent(world)}/events`, {
+        cache: 'no-store',
+        headers: this.authHeaders(),
+      });
+      if (!response.ok) return; // an expired token surfaces properly on the next explicit write instead
+      const parsed = (await response.json()) as WorldEventsFile;
+      if (!Array.isArray(parsed.events)) return;
+      this._events.set(parsed.events);
+      this._dirty.set(false);
+    } catch {
+      // Same philosophy as the parse failure above — not worth a hard error.
     }
   }
 

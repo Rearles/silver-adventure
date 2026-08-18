@@ -57,7 +57,7 @@ assets) and the API (`frontend/worker/`), same origin:
 | Piece | What it does |
 |---|---|
 | **R2** (`age-of-aether-world-data` bucket) | Durable store — the actual `{ people: [...] }` / `{ events: [...] }` JSON, one object per world per dataset |
-| **Worker** (`frontend/worker/index.ts`) | `GET /api/world/:world[/events]` (public read), `POST /api/auth` (password → session token), `POST /api/world/:world[/events]` (authenticated write) |
+| **Worker** (`frontend/worker/index.ts`) | `GET /api/world/:world[/events]` (public read, GM-vs-player projected — see below), `POST /api/auth` (password → session token), `POST /api/world/:world[/events]` (authenticated write) |
 | **Durable Object** (`WorldRoom`, `frontend/worker/world-room.ts`) | One per world. Relays a broadcast over WebSocket (`/api/world/:world/live`) to every open tab after a write — this is what makes a GM's save show up for players without a reload |
 
 **GM auth:** `GM_PASSWORD` and `SESSION_SECRET` are Worker secrets
@@ -65,6 +65,17 @@ assets) and the API (`frontend/worker/`), same origin:
 password and exchanges it for a signed session token
 (`frontend/worker/auth.ts`); the Worker independently re-verifies that token on
 every write — the client-side gate is UX, not the security boundary.
+
+**The Worker is also the trust boundary for reads, not just writes.** `GET
+/api/world/:world[/events]` and the WebSocket broadcast both run the same
+`toPlayerPeople`/`toPlayerEvents` projection the app uses for Player View —
+server-side, before the response ever reaches the network — unless the request
+carries a valid GM session token. Hidden people, `gmNotes`, and hidden events
+never leave the Worker for an unauthenticated request; the client-side GM/Player
+toggle is UX layered on top of that, not the thing actually keeping them out. A
+GM's own tab sends its token on reads too, and on receiving a live push
+re-fetches with that token rather than trusting the (player-filtered) pushed
+payload — see `TreeDataService`/`TimelineDataService`'s `applyLivePush`.
 
 **Local dev caveat:** `ng serve` only serves the Angular app, not `/api/*` — there's
 no Worker running at `localhost:4200`. Backend changes need `wrangler deploy`
