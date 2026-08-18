@@ -190,6 +190,14 @@ scroll the wheel to zoom in and out, anchored under the cursor, or use the +/−
 control in the bottom-right corner. A click that doesn't move the cursor still
 selects a card as before — only an actual drag is treated as panning.
 
+## Entering dates
+
+Every birth/death/event date field (person birth and death, event start and end)
+opens the same popup calendar widget rather than raw number inputs — a trigger
+button showing the current date, and a popup with month/year navigation and a day
+grid. Day and month stay optional precision on top of year, matching the data
+model: a year-only date is valid, and clearing the year clears the whole date.
+
 ## Adding a nation or house
 
 Houses and nations are not configured anywhere — they are just strings on people, and

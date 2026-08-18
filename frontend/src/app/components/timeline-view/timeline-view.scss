@@ -65,13 +65,76 @@
   border-bottom: 1px solid var(--border);
 }
 
-.add-form {
+/* ── Add/edit event modal ───────────────────────────────────────────────────
+   Duplicated from app.scss rather than shared — component stylesheets compile
+   in isolation, and this is the only other place in the app that pops its own
+   modal instead of being hosted by the shell (see PersonForm/GmDossier in
+   app.html/.scss). */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 20;
+}
+
+.modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(88vh, 860px);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  z-index: 21;
+}
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+
+  h2 {
+    font-size: 16px;
+  }
+}
+
+.form-body {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.form-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   background: var(--bg-raised);
+
+  .spacer {
+    flex: 1;
+  }
 }
 
 .add-row {
@@ -162,30 +225,6 @@
   font-size: 11px;
   color: var(--text-faint);
   white-space: nowrap;
-}
-
-/* Mirrors PersonForm's birth/death date-parts styling. */
-.date-parts {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  .date-day,
-  .date-month {
-    flex: 0 0 52px;
-    width: 52px;
-    text-align: center;
-  }
-
-  .date-year {
-    flex: 0 0 72px;
-    width: 72px;
-    text-align: center;
-  }
-
-  .date-sep {
-    color: var(--text-faint);
-  }
 }
 
 /* ── The spine ───────────────────────────────────────────────────────────── */

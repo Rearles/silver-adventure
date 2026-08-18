@@ -19,7 +19,12 @@ import { PersonCard } from '../person-card/person-card';
 export const MIN_SCALE = 0.4;
 export const MAX_SCALE = 2.5;
 /** Step applied per wheel notch or per click of the zoom buttons. */
-export const SCALE_STEP = 0.15;
+export const SCALE_STEP = 0.08;
+
+/** A standard mouse-wheel notch reports `deltaY` in units of ~100 — trackpads report the same
+ *  gesture as many much smaller deltas, which is why the wheel handler normalizes against this
+ *  instead of applying SCALE_STEP per event regardless of magnitude. */
+const WHEEL_NOTCH_DELTA = 100;
 
 function clampScale(value: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
@@ -149,9 +154,14 @@ export class TreeView {
     this.viewMode.selectPerson(this.selectedPersonId() === personId ? null : personId);
   }
 
-  /** Starts tracking a possible drag-to-pan gesture. Left button/primary touch/pen only. */
+  /**
+   * Starts tracking a possible drag-to-pan gesture. Left button/primary touch/pen only, and never
+   * for a pointerdown that originated on a button (the GM icon buttons on a person card) — capturing
+   * the pointer here would swallow the click that button is about to receive.
+   */
   onPointerDown(event: PointerEvent): void {
     if (event.button !== 0) return;
+    if ((event.target as HTMLElement | null)?.closest('button')) return;
     const host = this.scroller()?.nativeElement;
     if (host === undefined) return;
 
@@ -197,6 +207,13 @@ export class TreeView {
    * Scroll wheel zooms (this canvas has no other use for it — panning is
    * drag, not wheel-scroll), keeping the point under the cursor visually
    * fixed rather than zooming toward the canvas origin.
+   *
+   * The step is scaled to how far this particular event moved relative to a
+   * standard mouse-wheel notch, rather than applying a flat SCALE_STEP per
+   * event: a mouse notch reports `deltaY` around ±100, but a trackpad reports
+   * the same zoom gesture as a stream of much smaller deltas, so applying the
+   * full step to every one of those made trackpad zooming wildly oversensitive.
+   * Clamping the fraction to ±1 also caps a single fast wheel flick at one step.
    */
   onWheel(event: WheelEvent): void {
     const host = this.scroller()?.nativeElement;
@@ -204,8 +221,8 @@ export class TreeView {
     event.preventDefault();
 
     const rect = host.getBoundingClientRect();
-    const direction = event.deltaY > 0 ? -1 : 1;
-    this.zoomTo(this._scale() + direction * SCALE_STEP, event.clientX - rect.left, event.clientY - rect.top);
+    const fraction = Math.min(1, Math.max(-1, -event.deltaY / WHEEL_NOTCH_DELTA));
+    this.zoomTo(this._scale() + fraction * SCALE_STEP, event.clientX - rect.left, event.clientY - rect.top);
   }
 
   /** Zoom-in-button click: steps in, anchored on the current viewport's centre. */

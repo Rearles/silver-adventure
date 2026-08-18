@@ -1,0 +1,152 @@
+:host {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.trigger {
+  width: 100%;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px 9px;
+  font-size: 13px;
+  font-family: var(--font);
+  color: var(--text);
+
+  &:hover {
+    border-color: var(--gold);
+  }
+
+  &.is-unset {
+    color: var(--text-faint);
+    font-style: italic;
+  }
+}
+
+.popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-faint);
+
+  &:hover:not(:disabled) {
+    border-color: var(--gold);
+    color: var(--text);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}
+
+.month-select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 3px 4px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.year-input {
+  flex: 0 0 62px;
+  width: 62px;
+  font-size: 12px;
+  text-align: center;
+  padding: 3px 4px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.prompt {
+  margin: 0;
+  padding: 10px 2px;
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-faint);
+    padding-bottom: 4px;
+  }
+
+  td {
+    text-align: center;
+    padding: 1px;
+  }
+}
+
+.day-btn {
+  width: 28px;
+  height: 24px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text);
+
+  &:hover {
+    border-color: var(--gold);
+  }
+
+  &.is-selected {
+    background: var(--gold);
+    color: var(--bg);
+  }
+}
+
+.popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.draft-summary {
+  font-size: 11px;
+  color: var(--text-muted);
+}

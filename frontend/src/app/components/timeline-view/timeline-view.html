@@ -58,8 +58,14 @@
   }
 
   @if (isGmView() && showAddForm()) {
-    <form class="add-form" [formGroup]="addForm" (ngSubmit)="onSubmitEvent()">
-      <h3>{{ formHeading() }}</h3>
+    <div class="overlay" (click)="closeAddForm()"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Event details">
+    <form class="event-form" [formGroup]="addForm" (ngSubmit)="onSubmitEvent()">
+      <header class="form-header">
+        <h2>{{ formHeading() }}</h2>
+        <button type="button" class="btn btn-sm" (click)="closeAddForm()" aria-label="Close">✕</button>
+      </header>
+      <div class="form-body">
       <div class="field">
         <label for="tl-title">Title *</label>
         <input id="tl-title" formControlName="title" />
@@ -74,81 +80,29 @@
       </div>
       <div class="add-row">
         <div class="field">
-          <label for="tl-start-day">Start *</label>
-          <div class="date-parts">
-            <input
-              id="tl-start-day"
-              class="date-day"
-              type="number"
-              formControlName="startDay"
-              placeholder="DD"
-              aria-label="Start day"
-            />
-            <span class="date-sep">/</span>
-            <input
-              id="tl-start-month"
-              class="date-month"
-              type="number"
-              formControlName="startMonth"
-              placeholder="MM"
-              aria-label="Start month"
-            />
-            <span class="date-sep">/</span>
-            <input
-              id="tl-start-year"
-              class="date-year"
-              type="number"
-              formControlName="startYear"
-              placeholder="YYYY"
-              aria-label="Start year"
-            />
-          </div>
+          <label id="tl-start-label">Start *</label>
+          <app-date-picker
+            id="tl-start-day"
+            label="Start date"
+            [day]="addForm.controls.startDay.value"
+            [month]="addForm.controls.startMonth.value"
+            [year]="addForm.controls.startYear.value"
+            (dateChange)="onStartDateChange($event)"
+          />
           @if (addForm.controls.startYear.touched && addForm.controls.startYear.invalid) {
             <span class="error-text">A start year is required.</span>
           }
-          @if (addForm.controls.startDay.touched && addForm.controls.startDay.invalid) {
-            <span class="error-text">Day must be between 1 and 31.</span>
-          }
-          @if (addForm.controls.startMonth.touched && addForm.controls.startMonth.invalid) {
-            <span class="error-text">Month must be between 1 and 12.</span>
-          }
         </div>
         <div class="field">
-          <label for="tl-end-day">End</label>
-          <div class="date-parts">
-            <input
-              id="tl-end-day"
-              class="date-day"
-              type="number"
-              formControlName="endDay"
-              placeholder="DD"
-              aria-label="End day"
-            />
-            <span class="date-sep">/</span>
-            <input
-              id="tl-end-month"
-              class="date-month"
-              type="number"
-              formControlName="endMonth"
-              placeholder="MM"
-              aria-label="End month"
-            />
-            <span class="date-sep">/</span>
-            <input
-              id="tl-end-year"
-              class="date-year"
-              type="number"
-              formControlName="endYear"
-              placeholder="YYYY"
-              aria-label="End year"
-            />
-          </div>
-          @if (addForm.controls.endDay.touched && addForm.controls.endDay.invalid) {
-            <span class="error-text">Day must be between 1 and 31.</span>
-          }
-          @if (addForm.controls.endMonth.touched && addForm.controls.endMonth.invalid) {
-            <span class="error-text">Month must be between 1 and 12.</span>
-          }
+          <label id="tl-end-label">End</label>
+          <app-date-picker
+            id="tl-end-day"
+            label="End date"
+            [day]="addForm.controls.endDay.value"
+            [month]="addForm.controls.endMonth.value"
+            [year]="addForm.controls.endYear.value"
+            (dateChange)="onEndDateChange($event)"
+          />
         </div>
       </div>
       @if (addForm.errors?.['chronology']) {
@@ -275,8 +229,14 @@
         }
       </div>
 
-      <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
+      </div>
+      <footer class="form-footer">
+        <span class="spacer"></span>
+        <button type="button" class="btn" (click)="closeAddForm()">Cancel</button>
+        <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
+      </footer>
     </form>
+    </div>
   }
 
   <div class="spine-scroll">

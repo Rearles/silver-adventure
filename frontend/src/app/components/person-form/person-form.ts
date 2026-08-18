@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import type { Person, Visibility } from '../../models/person';
 import { TreeDataService } from '../../services/tree-data.service';
+import { DatePicker, type DatePartsValue } from '../date-picker/date-picker';
 
 /** Collapses a (possibly partial) day/month/year into a single comparable number. */
 function toComparable(year: number | null, month: number | null, day: number | null): number | null {
@@ -41,7 +42,7 @@ function chronologyValidator(group: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-person-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DatePicker],
   templateUrl: './person-form.html',
   styleUrl: './person-form.scss',
 })
@@ -84,7 +85,7 @@ export class PersonForm {
 
   readonly isEditing = computed<boolean>(() => this.personId() !== null);
   readonly heading = computed<string>(() =>
-    this.isEditing() ? 'Edit person' : 'Add person',
+    this.isEditing() ? 'Edit person' : 'Add Person',
   );
 
   /** A person may have at most two parents. */
@@ -245,6 +246,18 @@ export class PersonForm {
       this.saved.emit(created.id);
     }
     this.closed.emit();
+  }
+
+  onBirthDateChange(value: DatePartsValue): void {
+    this.form.controls.birthDay.setValue(value.day);
+    this.form.controls.birthMonth.setValue(value.month);
+    this.form.controls.birthYear.setValue(value.year);
+  }
+
+  onDeathDateChange(value: DatePartsValue): void {
+    this.form.controls.deathDay.setValue(value.day);
+    this.form.controls.deathMonth.setValue(value.month);
+    this.form.controls.deathYear.setValue(value.year);
   }
 
   onCancel(): void {

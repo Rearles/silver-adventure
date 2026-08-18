@@ -45,29 +45,6 @@
   }
 }
 
-.date-parts {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  .date-day,
-  .date-month {
-    flex: 0 0 52px;
-    width: 52px;
-    text-align: center;
-  }
-
-  .date-year {
-    flex: 0 0 72px;
-    width: 72px;
-    text-align: center;
-  }
-
-  .date-sep {
-    color: var(--text-faint);
-  }
-}
-
 .check {
   display: flex;
   align-items: center;
