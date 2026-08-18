@@ -63,20 +63,96 @@
         <label for="tl-title">Title *</label>
         <input id="tl-title" formControlName="title" />
       </div>
+      <div class="field">
+        <label for="tl-type">Type</label>
+        <select id="tl-type" formControlName="type">
+          @for (type of eventTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </div>
       <div class="add-row">
         <div class="field">
-          <label for="tl-type">Type</label>
-          <select id="tl-type" formControlName="type">
-            @for (type of eventTypes; track type) {
-              <option [value]="type">{{ type }}</option>
-            }
-          </select>
+          <label for="tl-start-day">Start *</label>
+          <div class="date-parts">
+            <input
+              id="tl-start-day"
+              class="date-day"
+              type="number"
+              formControlName="startDay"
+              placeholder="DD"
+              aria-label="Start day"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-start-month"
+              class="date-month"
+              type="number"
+              formControlName="startMonth"
+              placeholder="MM"
+              aria-label="Start month"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-start-year"
+              class="date-year"
+              type="number"
+              formControlName="startYear"
+              placeholder="YYYY"
+              aria-label="Start year"
+            />
+          </div>
+          @if (addForm.controls.startYear.touched && addForm.controls.startYear.invalid) {
+            <span class="error-text">A start year is required.</span>
+          }
+          @if (addForm.controls.startDay.touched && addForm.controls.startDay.invalid) {
+            <span class="error-text">Day must be between 1 and 31.</span>
+          }
+          @if (addForm.controls.startMonth.touched && addForm.controls.startMonth.invalid) {
+            <span class="error-text">Month must be between 1 and 12.</span>
+          }
         </div>
         <div class="field">
-          <label for="tl-year">Year *</label>
-          <input id="tl-year" type="number" formControlName="year" />
+          <label for="tl-end-day">End</label>
+          <div class="date-parts">
+            <input
+              id="tl-end-day"
+              class="date-day"
+              type="number"
+              formControlName="endDay"
+              placeholder="DD"
+              aria-label="End day"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-end-month"
+              class="date-month"
+              type="number"
+              formControlName="endMonth"
+              placeholder="MM"
+              aria-label="End month"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-end-year"
+              class="date-year"
+              type="number"
+              formControlName="endYear"
+              placeholder="YYYY"
+              aria-label="End year"
+            />
+          </div>
+          @if (addForm.controls.endDay.touched && addForm.controls.endDay.invalid) {
+            <span class="error-text">Day must be between 1 and 31.</span>
+          }
+          @if (addForm.controls.endMonth.touched && addForm.controls.endMonth.invalid) {
+            <span class="error-text">Month must be between 1 and 12.</span>
+          }
         </div>
       </div>
+      @if (addForm.errors?.['chronology']) {
+        <p class="error-text">End date cannot precede start date.</p>
+      }
       <div class="add-row">
         <div class="field">
           <label for="tl-era">Era</label>
@@ -146,7 +222,7 @@
                 </span>
                 <span class="body">
                   <span class="year">
-                    {{ event.startYear }}
+                    {{ formatEventYears(event) }}
                     @if (isGmView() && event.visibility === 'hidden') {
                       <span class="hidden-flag">· hidden from players</span>
                     }

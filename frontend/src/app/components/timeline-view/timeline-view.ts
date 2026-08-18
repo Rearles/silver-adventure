@@ -1,5 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  type AbstractControl,
+  type ValidationErrors,
+} from '@angular/forms';
 import { Eye, EyeOff, LucideAngularModule, Trash2, type LucideIconData } from 'lucide-angular';
 import {
   DYNASTY_EVENT_TYPES,
@@ -15,6 +21,28 @@ import { eventColor, eventIcon } from './event-visuals';
 interface EraGroup {
   era: string;
   events: DynastyEvent[];
+}
+
+/** Collapses a (possibly partial) day/month/year into a single comparable number. Mirrors PersonForm's helper of the same name. */
+function toComparable(year: number | null, month: number | null, day: number | null): number | null {
+  if (year === null) return null;
+  return year * 10000 + (month ?? 1) * 100 + (day ?? 1);
+}
+
+/** End cannot precede start. Reported on the group, not a single field — mirrors PersonForm's `chronologyValidator`. */
+function chronologyValidator(group: AbstractControl): ValidationErrors | null {
+  const start = toComparable(
+    group.get('startYear')?.value as number | null,
+    group.get('startMonth')?.value as number | null,
+    group.get('startDay')?.value as number | null,
+  );
+  const end = toComparable(
+    group.get('endYear')?.value as number | null,
+    group.get('endMonth')?.value as number | null,
+    group.get('endDay')?.value as number | null,
+  );
+  if (start === null || end === null) return null;
+  return end < start ? { chronology: true } : null;
 }
 
 /**
@@ -67,16 +95,24 @@ export class TimelineView {
 
   readonly showAddForm = signal<boolean>(false);
 
-  readonly addForm = this.formBuilder.nonNullable.group({
-    title: ['', [Validators.required]],
-    type: ['other' as DynastyEventType],
-    year: [1500, [Validators.required]],
-    era: [''],
-    description: [''],
-    nation: [''],
-    house: [''],
-    visibility: ['known' as Visibility],
-  });
+  readonly addForm = this.formBuilder.nonNullable.group(
+    {
+      title: ['', [Validators.required]],
+      type: ['other' as DynastyEventType],
+      startDay: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(31)]),
+      startMonth: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(12)]),
+      startYear: [1500, [Validators.required]],
+      endDay: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(31)]),
+      endMonth: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(12)]),
+      endYear: this.formBuilder.control<number | null>(null),
+      era: [''],
+      description: [''],
+      nation: [''],
+      house: [''],
+      visibility: ['known' as Visibility],
+    },
+    { validators: chronologyValidator },
+  );
 
   /** Contiguous runs of the same era, so the spine gets readable section heads. */
   readonly grouped = computed<EraGroup[]>(() => {
@@ -100,6 +136,11 @@ export class TimelineView {
 
   nameFor(personId: string): string {
     return this.treeData.nameFor(personId);
+  }
+
+  /** "1780" alone, or "1780–1785" when the event has an end year — mirrors PersonCard's birth–death formatting. */
+  formatEventYears(event: DynastyEvent): string {
+    return event.endYear === undefined ? `${event.startYear}` : `${event.startYear}–${event.endYear}`;
   }
 
   /** Clicking the selected event again clears the tree highlight. */
@@ -146,7 +187,12 @@ export class TimelineView {
       this.addForm.reset({
         title: '',
         type: 'other',
-        year: this.yearBounds()?.max ?? 1500,
+        startDay: null,
+        startMonth: null,
+        startYear: this.yearBounds()?.max ?? 1500,
+        endDay: null,
+        endMonth: null,
+        endYear: null,
         era: '',
         description: '',
         nation: selected === null ? '' : (this.treeData.personById(selected)?.nation ?? ''),
@@ -165,14 +211,24 @@ export class TimelineView {
     const value = this.addForm.getRawValue();
     const selected = this.selectedPersonId();
 
+    // Day/month are precision on top of a year; without a year they are
+    // meaningless — mirrors PersonForm's birth/death handling. startYear is
+    // always present (required), so start day/month always apply when set.
+    const endDay = value.endYear !== null ? value.endDay : null;
+    const endMonth = value.endYear !== null ? value.endMonth : null;
+
     this.timelineData.addEvent({
       title: value.title.trim(),
       type: value.type,
-      // TODO(rework-event-dates plan, later step): the form still only collects a
-      // single year/nation/house — startYear/nations/houses are bridged from those
-      // as one-element (or empty) values until the form itself gains Start/End
-      // date fields and a real multi-select nation/house tag picker.
-      startYear: value.year,
+      startYear: value.startYear,
+      ...(value.startMonth !== null ? { startMonth: value.startMonth } : {}),
+      ...(value.startDay !== null ? { startDay: value.startDay } : {}),
+      ...(value.endYear !== null ? { endYear: value.endYear } : {}),
+      ...(endMonth !== null ? { endMonth } : {}),
+      ...(endDay !== null ? { endDay } : {}),
+      // TODO(rework-event-dates plan, later steps): the form still only collects a
+      // single nation/house — nations/houses are bridged from those as one-element
+      // (or empty) arrays until the form gains a real multi-select tag picker.
       nations: value.nation.trim() !== '' ? [value.nation.trim()] : [],
       houses: value.house.trim() !== '' ? [value.house.trim()] : [],
       relatedPersonIds: selected === null ? [] : [selected],
