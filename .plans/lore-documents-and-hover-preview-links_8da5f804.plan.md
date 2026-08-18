@@ -2,7 +2,7 @@
 title: "Add lore documents (Houses/Nations + standalone topics) with [[wiki-link]] hover-preview cards"
 type: "feature"
 created: "2026-08-18"
-status: in-progress
+status: complete
 related: []
 ---
 
@@ -32,7 +32,7 @@ Confirmed decisions (already answered by user): Organization entity type for Hou
 - [x] Wire `<app-wiki-text>` into existing read-only text displays: person notes (`frontend/src/app/components/gm-dossier/` or wherever `Person.notes` renders) and event description (`frontend/src/app/components/timeline-view/timeline-view.html`)
 - [x] Update root `README.md` with a short "Lore pages" section documenting `[[Wiki Link]]` syntax and where lore lives in the UI
 - [x] Test: add `toPlayerLore()` cases to `frontend/src/app/models/projection.spec.ts` (hidden doc dropped, cross-ref scrubbing for people/events/lore)
-- [ ] Build/typecheck the frontend (`npm run build` or `ng build`) and fix any compile errors surfaced by the new files
+- [x] Build/typecheck the frontend (`npm run build` or `ng build`) and fix any compile errors surfaced by the new files
 
 ## Notes
 
