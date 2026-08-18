@@ -2,7 +2,7 @@
 title: "Add a Cloudflare Worker backend for live, real-time GM edits and real password-gated GM View"
 type: "feature"
 created: "2026-08-18"
-status: not-started
+status: in-progress
 related: ["add-inline-person-creation-for-parent-child-spouse-relationships_22551bcf.plan.md"]
 ---
 
@@ -14,7 +14,7 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 
 ## Todos
 
-- [ ] Create `frontend/worker/index.ts` (Worker entry) and `frontend/worker/world-room.ts` (Durable Object class)
+- [x] Create `frontend/worker/index.ts` (Worker entry) and `frontend/worker/world-room.ts` (Durable Object class)
 - [ ] Update `frontend/wrangler.jsonc` — add `main`, R2 bucket binding, DO binding + migrations block
 - [ ] Run `wrangler r2 bucket create` for the world-data bucket; record the name used
 - [ ] Implement `GET /api/world/:world` in index.ts — reads the JSON blob from R2
