@@ -1,0 +1,82 @@
+<button
+  type="button"
+  class="trigger"
+  [id]="id() || null"
+  [class.is-unset]="year() === null"
+  [attr.aria-label]="label() + ': ' + summary()"
+  (click)="toggle()"
+>
+  {{ summary() }}
+</button>
+
+@if (isOpen()) {
+  <div class="popup" role="dialog" [attr.aria-label]="label() + ' calendar'">
+    <div class="nav">
+      <button type="button" class="nav-btn" title="Previous year" [disabled]="draftYear() === null" (click)="stepYear(-1)">
+        <lucide-icon [img]="ChevronsLeftIcon" [size]="14" />
+      </button>
+      <button type="button" class="nav-btn" title="Previous month" [disabled]="draftYear() === null" (click)="stepMonth(-1)">
+        <lucide-icon [img]="ChevronLeftIcon" [size]="14" />
+      </button>
+
+      <select class="month-select" [disabled]="draftYear() === null" [value]="draftMonth() ?? ''" (change)="onMonthSelect($any($event.target).value)">
+        <option value="">—</option>
+        @for (name of monthNames; track name; let i = $index) {
+          <option [value]="i + 1">{{ name }}</option>
+        }
+      </select>
+      <input
+        class="year-input"
+        type="number"
+        placeholder="Year"
+        [value]="yearText()"
+        (input)="onYearInput($any($event.target).value)"
+      />
+
+      <button type="button" class="nav-btn" title="Next month" [disabled]="draftYear() === null" (click)="stepMonth(1)">
+        <lucide-icon [img]="ChevronRightIcon" [size]="14" />
+      </button>
+      <button type="button" class="nav-btn" title="Next year" [disabled]="draftYear() === null" (click)="stepYear(1)">
+        <lucide-icon [img]="ChevronsRightIcon" [size]="14" />
+      </button>
+    </div>
+
+    @if (draftYear() === null) {
+      <p class="prompt">Enter a year to choose a month and day.</p>
+    } @else {
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Su</th>
+            <th>Mo</th>
+            <th>Tu</th>
+            <th>We</th>
+            <th>Th</th>
+            <th>Fr</th>
+            <th>Sa</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (week of weeks(); track $index) {
+            <tr>
+              @for (cell of week; track $index) {
+                <td>
+                  @if (cell !== null) {
+                    <button type="button" class="day-btn" [class.is-selected]="isSelectedDay(cell)" (click)="selectDay(cell)">
+                      {{ cell }}
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    <footer class="popup-footer">
+      <span class="draft-summary">{{ draftSummary() }}</span>
+      <button type="button" class="btn btn-sm" (click)="clear()">Clear</button>
+    </footer>
+  </div>
+}

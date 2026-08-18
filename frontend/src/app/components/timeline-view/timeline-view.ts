@@ -7,6 +7,7 @@ import {
   type ValidationErrors,
 } from '@angular/forms';
 import { Eye, EyeOff, LucideAngularModule, Pencil, Trash2, type LucideIconData } from 'lucide-angular';
+import { DatePicker, type DatePartsValue } from '../date-picker/date-picker';
 import {
   DYNASTY_EVENT_TYPES,
   type DynastyEvent,
@@ -59,7 +60,7 @@ function chronologyValidator(group: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-timeline-view',
-  imports: [LucideAngularModule, ReactiveFormsModule],
+  imports: [LucideAngularModule, ReactiveFormsModule, DatePicker],
   templateUrl: './timeline-view.html',
   styleUrl: './timeline-view.scss',
 })
@@ -354,7 +355,23 @@ export class TimelineView {
     this.closeAddForm();
   }
 
-  private closeAddForm(): void {
+  /** startYear is a required, non-nullable control — a cleared picker still writes `null` through
+   *  so Validators.required catches it and the existing "A start year is required" error shows,
+   *  even though the control's static type says it never holds null. */
+  onStartDateChange(value: DatePartsValue): void {
+    this.addForm.controls.startDay.setValue(value.day);
+    this.addForm.controls.startMonth.setValue(value.month);
+    this.addForm.controls.startYear.setValue(value.year as number);
+    this.addForm.controls.startYear.markAsTouched();
+  }
+
+  onEndDateChange(value: DatePartsValue): void {
+    this.addForm.controls.endDay.setValue(value.day);
+    this.addForm.controls.endMonth.setValue(value.month);
+    this.addForm.controls.endYear.setValue(value.year);
+  }
+
+  closeAddForm(): void {
     this.showAddForm.set(false);
     this.editingEventId.set(null);
     this.relatedPersonIds.set([]);
