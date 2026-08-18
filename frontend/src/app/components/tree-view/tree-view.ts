@@ -63,6 +63,26 @@ export class TreeView {
 
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
+  /** Movement (px) below which a pointerdown→pointerup is still treated as a click, not a drag. */
+  private static readonly DRAG_THRESHOLD = 4;
+
+  /** In-progress drag-to-pan gesture; imperative-only, never read from the template. */
+  private dragState: {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startScrollLeft: number;
+    startScrollTop: number;
+    moved: boolean;
+  } | null = null;
+
+  /** True only while a drag has actually moved past the threshold — drives the grab/grabbing cursor. */
+  private readonly _isDragging = signal<boolean>(false);
+  readonly isDragging = this._isDragging.asReadonly();
+
+  /** Consumed by the next `onSelect` so the card under the pointer isn't also selected right after a drag. */
+  private suppressNextSelect = false;
+
   constructor() {
     // Timeline → tree: centre the first person an event refers to.
     effect(() => {
@@ -103,7 +123,55 @@ export class TreeView {
 
   /** Clicking the selected person again clears the selection. */
   onSelect(personId: string): void {
+    if (this.suppressNextSelect) {
+      this.suppressNextSelect = false;
+      return;
+    }
     this.viewMode.selectPerson(this.selectedPersonId() === personId ? null : personId);
+  }
+
+  /** Starts tracking a possible drag-to-pan gesture. Left button/primary touch/pen only. */
+  onPointerDown(event: PointerEvent): void {
+    if (event.button !== 0) return;
+    const host = this.scroller()?.nativeElement;
+    if (host === undefined) return;
+
+    this.dragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollLeft: host.scrollLeft,
+      startScrollTop: host.scrollTop,
+      moved: false,
+    };
+    host.setPointerCapture(event.pointerId);
+  }
+
+  /** Below the drag threshold this is a no-op, so a plain click still reaches `onSelect` untouched. */
+  onPointerMove(event: PointerEvent): void {
+    const drag = this.dragState;
+    const host = this.scroller()?.nativeElement;
+    if (drag === null || host === undefined || event.pointerId !== drag.pointerId) return;
+
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < TreeView.DRAG_THRESHOLD) return;
+
+    drag.moved = true;
+    this._isDragging.set(true);
+    host.scrollLeft = drag.startScrollLeft - dx;
+    host.scrollTop = drag.startScrollTop - dy;
+  }
+
+  /** Ends the gesture; a real drag arms `suppressNextSelect` so the trailing click doesn't also select a card. */
+  onPointerUp(event: PointerEvent): void {
+    const drag = this.dragState;
+    if (drag === null || event.pointerId !== drag.pointerId) return;
+
+    if (drag.moved) this.suppressNextSelect = true;
+    this.scroller()?.nativeElement.releasePointerCapture(event.pointerId);
+    this.dragState = null;
+    this._isDragging.set(false);
   }
 
   onToggleVisibility(personId: string): void {

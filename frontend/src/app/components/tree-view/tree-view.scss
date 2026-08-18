@@ -8,6 +8,12 @@
   height: 100%;
   overflow: auto;
   background-color: var(--bg);
+  cursor: grab;
+  touch-action: none;
+}
+
+.tree-scroll.is-dragging {
+  cursor: grabbing;
 }
 
 .tree-canvas-sizer {

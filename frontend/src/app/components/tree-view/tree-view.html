@@ -1,4 +1,12 @@
-<div class="tree-scroll" #scroller>
+<div
+  class="tree-scroll"
+  #scroller
+  [class.is-dragging]="isDragging()"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerUp($event)"
+>
   @if (layout().nodes.length === 0) {
     <p class="empty-state">
       @if (worldIsEmpty()) {
