@@ -1,4 +1,5 @@
 import type { Env } from './env';
+import { checkPassword, issueSessionToken } from './auth';
 import { WorldRoom } from './world-room';
 
 // wrangler's durable_objects binding resolves `class_name` against an export
@@ -26,12 +27,38 @@ async function readBlob(env: Env, key: string, emptyFallback: string): Promise<R
   return new Response(body, { status: 200, headers: JSON_HEADERS });
 }
 
+function jsonError(status: number, error: string): Response {
+  return new Response(JSON.stringify({ error }), { status, headers: JSON_HEADERS });
+}
+
+/** POST /api/auth — { password } in, { token } out. The real security boundary: */
+async function handleAuth(request: Request, env: Env): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonError(400, 'invalid JSON body');
+  }
+
+  const password =
+    typeof body === 'object' && body !== null && 'password' in body
+      ? (body as { password: unknown }).password
+      : undefined;
+
+  if (typeof password !== 'string' || !(await checkPassword(password, env))) {
+    return jsonError(401, 'invalid password');
+  }
+
+  const token = await issueSessionToken(env);
+  return new Response(JSON.stringify({ token }), { status: 200, headers: JSON_HEADERS });
+}
+
 /**
  * Worker entry point for the "age-of-aether-campaign" live API. Route bodies
  * are filled in across plan steps:
  *  - GET  /api/world/:world           — read people from R2 (public)      [done]
  *  - GET  /api/world/:world/events    — read events from R2 (public)      [done]
- *  - POST /api/auth                   — check GM_PASSWORD, issue a session token
+ *  - POST /api/auth                   — check GM_PASSWORD, issue a session token [done]
  *  - POST /api/world/:world           — authenticated write to R2 + notify the DO
  *  - GET  /api/world/:world/live      — WebSocket upgrade, relayed via WorldRoom
  */
@@ -39,6 +66,10 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const segments = url.pathname.split('/').filter((segment) => segment !== '');
+
+    if (request.method === 'POST' && segments.length === 2 && segments[0] === 'api' && segments[1] === 'auth') {
+      return handleAuth(request, env);
+    }
 
     if (
       request.method === 'GET' &&
