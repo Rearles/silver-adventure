@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers static-assets deploy config for the "age-of-aether-campaign"
+  // project. No Worker script — this is a pure static site (the Angular build
+  // output), served entirely from `assets`. Paths are relative to this file,
+  // which lives in the Workers Build "Root directory" (frontend/).
+  "name": "age-of-aether-campaign",
+  "compatibility_date": "2026-08-17",
+  "assets": {
+    "directory": "./dist/frontend/browser"
+  }
+}
