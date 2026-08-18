@@ -3,6 +3,7 @@ import type { GmNotes, Person, PersonLike, PlayerPerson, Visibility } from '../m
 import { applyOverlapFilter, collectHouses, collectNations, toPlayerPeople } from '../models/projection';
 import type { FilteredPerson } from '../models/projection';
 import type { WorldPeopleFile } from '../models/world';
+import { SessionService } from './session.service';
 import { ViewModeService } from './view-mode.service';
 
 export const DEFAULT_WORLD = 'world';
@@ -18,10 +19,18 @@ export const DEFAULT_WORLD = 'world';
  * load, an `/api/world/{world}/live` WebSocket stays open and applies pushes
  * from the server (the GM's own saves, broadcast back) directly to `_people`,
  * so open tabs — including players' — update without a manual reload.
+ *
+ * The Worker itself is the trust boundary: it returns the full GM data only to
+ * a request carrying a valid session token, and the same is true of what it
+ * broadcasts over the live WebSocket (see frontend/worker/index.ts). A GM's
+ * own tab sends its token on every GET and, on receiving a push, re-fetches
+ * with that token rather than trusting the (player-filtered) pushed payload —
+ * see `applyLivePush`.
  */
 @Injectable({ providedIn: 'root' })
 export class TreeDataService {
   private readonly viewMode = inject(ViewModeService);
+  private readonly session = inject(SessionService);
 
   private readonly _people = signal<Person[]>([]);
   private readonly _world = signal<string>(DEFAULT_WORLD);
@@ -102,7 +111,10 @@ export class TreeDataService {
     }
 
     try {
-      const response = await fetch(`/api/world/${encodeURIComponent(world)}`, { cache: 'no-store' });
+      const response = await fetch(`/api/world/${encodeURIComponent(world)}`, {
+        cache: 'no-store',
+        headers: this.authHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`/api/world/${world} responded ${response.status}`);
       }
@@ -120,6 +132,12 @@ export class TreeDataService {
     }
 
     this.connectLive(world);
+  }
+
+  /** Sends the GM session token, when one is held, so the Worker returns the full GM data rather than the player projection. */
+  private authHeaders(): HeadersInit {
+    const token = this.session.token();
+    return token === null ? {} : { Authorization: `Bearer ${token}` };
   }
 
   /**
@@ -155,7 +173,7 @@ export class TreeDataService {
       this.reconnectAttempt = 0;
     });
     socket.addEventListener('message', (event) => {
-      this.applyLivePush(String(event.data));
+      this.applyLivePush(String(event.data), world);
     });
     socket.addEventListener('close', () => {
       if (this.socket !== socket) return; // superseded by a newer connection
@@ -172,8 +190,20 @@ export class TreeDataService {
     this.reconnectTimer = setTimeout(() => this.connectLive(world), delayMs);
   }
 
-  /** A push carries the *saved* state (this GM's own write, broadcast back) — never treated as a local draft. */
-  private applyLivePush(raw: string): void {
+  /**
+   * A push carries the *saved* state (this GM's own write, broadcast back) —
+   * never treated as a local draft. The pushed payload itself is always the
+   * player-filtered projection (see frontend/worker/index.ts) — a GM tab
+   * doesn't apply it directly, since that would show its own hidden people
+   * and gmNotes vanishing from its own GM View immediately after saving them.
+   * It re-fetches with its session token instead, which is what actually
+   * clears `_dirty` for a GM; a player tab applies the pushed payload as-is.
+   */
+  private applyLivePush(raw: string, world: string): void {
+    if (this.session.isAuthenticated()) {
+      void this.refetchAuthenticated(world);
+      return;
+    }
     try {
       const message = JSON.parse(raw) as { kind?: string; payload?: string };
       if (message.kind !== 'people' || typeof message.payload !== 'string') return; // 'events' is TimelineDataService's concern
@@ -184,6 +214,23 @@ export class TreeDataService {
     } catch {
       // A malformed push isn't worth surfacing as a hard error — the next
       // successful push, or a manual reload, corrects the view.
+    }
+  }
+
+  /** GM-only refresh triggered by a live push: re-fetches the real (unfiltered) data with the held session token. */
+  private async refetchAuthenticated(world: string): Promise<void> {
+    try {
+      const response = await fetch(`/api/world/${encodeURIComponent(world)}`, {
+        cache: 'no-store',
+        headers: this.authHeaders(),
+      });
+      if (!response.ok) return; // an expired token surfaces properly on the next explicit write instead
+      const parsed = (await response.json()) as WorldPeopleFile;
+      if (!Array.isArray(parsed.people)) return;
+      this._people.set(normalizePool(parsed.people));
+      this._dirty.set(false);
+    } catch {
+      // Same philosophy as the parse failure above — not worth a hard error.
     }
   }
 

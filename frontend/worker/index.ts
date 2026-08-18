@@ -1,3 +1,7 @@
+import type { DynastyEvent } from '../src/app/models/dynasty-event';
+import type { Person } from '../src/app/models/person';
+import { toPlayerEvents, toPlayerPeople } from '../src/app/models/projection';
+import type { WorldEventsFile, WorldPeopleFile } from '../src/app/models/world';
 import type { Env } from './env';
 import { checkPassword, issueSessionToken, verifySessionToken } from './auth';
 import { WorldRoom } from './world-room';
@@ -17,18 +21,54 @@ function eventsKey(world: string): string {
   return `${world}-events.json`;
 }
 
-/** Valid empty shape for a world that hasn't been seeded into R2 yet. */
-const EMPTY_PEOPLE = JSON.stringify({ people: [] });
-const EMPTY_EVENTS = JSON.stringify({ events: [] });
-
-async function readBlob(env: Env, key: string, emptyFallback: string): Promise<Response> {
-  const object = await env.WORLD_BUCKET.get(key);
-  const body = object === null ? emptyFallback : await object.text();
-  return new Response(body, { status: 200, headers: JSON_HEADERS });
-}
-
 function jsonError(status: number, error: string): Response {
   return new Response(JSON.stringify({ error }), { status, headers: JSON_HEADERS });
+}
+
+/** True only for a request carrying a currently-valid GM session token. Never throws. */
+async function isAuthenticated(request: Request, env: Env): Promise<boolean> {
+  const header = request.headers.get('Authorization') ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';
+  return token !== '' && (await verifySessionToken(token, env));
+}
+
+async function readR2Json<T>(env: Env, key: string): Promise<T | null> {
+  const object = await env.WORLD_BUCKET.get(key);
+  if (object === null) return null;
+  try {
+    return JSON.parse(await object.text()) as T;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * GET /api/world/:world — public, but only ever returns the raw GM data (hidden
+ * people, gmNotes included) to a request carrying a valid GM session token.
+ * Everyone else gets the same `toPlayerPeople` projection the app applies
+ * client-side for Player View — the Worker is the actual trust boundary; the
+ * client-side view toggle is UX on top of it, not the enforcement point.
+ */
+async function readPeople(request: Request, env: Env, world: string): Promise<Response> {
+  const people = (await readR2Json<WorldPeopleFile>(env, peopleKey(world)))?.people ?? [];
+  if (await isAuthenticated(request, env)) {
+    return new Response(JSON.stringify({ people }), { status: 200, headers: JSON_HEADERS });
+  }
+  const projected: WorldPeopleFile = { people: toPlayerPeople(people) };
+  return new Response(JSON.stringify(projected), { status: 200, headers: JSON_HEADERS });
+}
+
+/** GET /api/world/:world/events — same GM-vs-player split as readPeople, via toPlayerEvents. */
+async function readEvents(request: Request, env: Env, world: string): Promise<Response> {
+  const events = (await readR2Json<WorldEventsFile>(env, eventsKey(world)))?.events ?? [];
+  if (await isAuthenticated(request, env)) {
+    return new Response(JSON.stringify({ events }), { status: 200, headers: JSON_HEADERS });
+  }
+  // toPlayerEvents needs to know who's visible, to scrub relatedPersonIds —
+  // the same reason TimelineDataService's player projection reads people too.
+  const people = (await readR2Json<WorldPeopleFile>(env, peopleKey(world)))?.people ?? [];
+  const projected: WorldEventsFile = { events: toPlayerEvents(events, people) };
+  return new Response(JSON.stringify(projected), { status: 200, headers: JSON_HEADERS });
 }
 
 /** POST /api/auth — { password } in, { token } out. The real security boundary: */
@@ -91,16 +131,34 @@ async function handleWriteWorld(request: Request, env: Env, world: string, kind:
   await env.WORLD_BUCKET.put(key, text, { httpMetadata: { contentType: 'application/json' } });
 
   const stub = env.WORLD_ROOM.get(env.WORLD_ROOM.idFromName(world));
-  await stub.broadcast(kind, text);
+  await stub.broadcast(kind, await playerFilteredBroadcast(kind, parsed, env, world));
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers: JSON_HEADERS });
 }
 
 /**
+ * The DO only ever relays this — never the raw `text` just written — so an
+ * open tab with no GM session (any player's) never receives hidden people or
+ * gmNotes over the WebSocket either, the same trust boundary as the GET
+ * routes above. A GM's own tab detects its own push and re-fetches the real
+ * data with its session token instead of trusting the broadcast payload —
+ * see `TreeDataService`/`TimelineDataService`'s `applyLivePush`.
+ */
+async function playerFilteredBroadcast(kind: WorldKind, parsed: unknown, env: Env, world: string): Promise<string> {
+  if (kind === 'people') {
+    const people = (parsed as WorldPeopleFile).people as Person[];
+    return JSON.stringify({ people: toPlayerPeople(people) } satisfies WorldPeopleFile);
+  }
+  const events = (parsed as WorldEventsFile).events as DynastyEvent[];
+  const people = (await readR2Json<WorldPeopleFile>(env, peopleKey(world)))?.people ?? [];
+  return JSON.stringify({ events: toPlayerEvents(events, people) } satisfies WorldEventsFile);
+}
+
+/**
  * Worker entry point for the "age-of-aether-campaign" live API. Route bodies
  * are filled in across plan steps:
- *  - GET  /api/world/:world           — read people from R2 (public)      [done]
- *  - GET  /api/world/:world/events    — read events from R2 (public)      [done]
+ *  - GET  /api/world/:world           — read people from R2 (public read, GM-vs-player projected) [done]
+ *  - GET  /api/world/:world/events    — read events from R2 (public read, GM-vs-player projected) [done]
  *  - POST /api/auth                   — check GM_PASSWORD, issue a session token [done]
  *  - POST /api/world/:world           — authenticated write to R2 + notify the DO [done]
  *  - POST /api/world/:world/events    — same, for events                         [done]
@@ -119,11 +177,11 @@ export default {
       const world = decodeURIComponent(segments[2]);
 
       if (segments.length === 3) {
-        if (request.method === 'GET') return readBlob(env, peopleKey(world), EMPTY_PEOPLE);
+        if (request.method === 'GET') return readPeople(request, env, world);
         if (request.method === 'POST') return handleWriteWorld(request, env, world, 'people');
       }
       if (segments.length === 4 && segments[3] === 'events') {
-        if (request.method === 'GET') return readBlob(env, eventsKey(world), EMPTY_EVENTS);
+        if (request.method === 'GET') return readEvents(request, env, world);
         if (request.method === 'POST') return handleWriteWorld(request, env, world, 'events');
       }
       // WebSocket upgrades can't go through DO RPC (broadcast()) — they need
