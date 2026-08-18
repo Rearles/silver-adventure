@@ -90,3 +90,17 @@
     </div>
   }
 </div>
+
+<!-- Sits outside .tree-scroll so it overlays the viewport corner instead of panning/scaling with the canvas. -->
+<div class="zoom-controls" role="group" aria-label="Zoom controls">
+  <button type="button" class="zoom-btn" [disabled]="isAtMinZoom()" (click)="zoomOut()" aria-label="Zoom out">
+    −
+  </button>
+  <span class="zoom-level">{{ zoomPercent() }}%</span>
+  <button type="button" class="zoom-btn" [disabled]="isAtMaxZoom()" (click)="zoomIn()" aria-label="Zoom in">
+    +
+  </button>
+  <button type="button" class="zoom-btn zoom-reset" [disabled]="scale() === 1" (click)="resetZoom()">
+    Reset
+  </button>
+</div>

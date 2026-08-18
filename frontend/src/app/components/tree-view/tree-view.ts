@@ -56,6 +56,9 @@ export class TreeView {
   /** Current zoom level of the tree canvas; 1 = 100%. Panning is native scroll, so it has no signal of its own. */
   private readonly _scale = signal<number>(1);
   readonly scale = this._scale.asReadonly();
+  readonly zoomPercent = computed<number>(() => Math.round(this._scale() * 100));
+  readonly isAtMinZoom = computed<boolean>(() => this._scale() <= MIN_SCALE);
+  readonly isAtMaxZoom = computed<boolean>(() => this._scale() >= MAX_SCALE);
 
   /**
    * Distinguishes "the world has no one at all" from "the filter matched no
@@ -187,19 +190,51 @@ export class TreeView {
     if (host === undefined) return;
     event.preventDefault();
 
-    const previousScale = this._scale();
+    const rect = host.getBoundingClientRect();
     const direction = event.deltaY > 0 ? -1 : 1;
-    const nextScale = clampScale(previousScale + direction * SCALE_STEP);
+    this.zoomTo(this._scale() + direction * SCALE_STEP, event.clientX - rect.left, event.clientY - rect.top);
+  }
+
+  /** Zoom-in-button click: steps in, anchored on the current viewport's centre. */
+  zoomIn(): void {
+    this.zoomByStep(1);
+  }
+
+  /** Zoom-out-button click: steps out, anchored on the current viewport's centre. */
+  zoomOut(): void {
+    this.zoomByStep(-1);
+  }
+
+  /** Back to 100%, still anchored on the current viewport's centre rather than jumping to the canvas origin. */
+  resetZoom(): void {
+    const host = this.scroller()?.nativeElement;
+    if (host === undefined) return;
+    this.zoomTo(1, host.clientWidth / 2, host.clientHeight / 2);
+  }
+
+  private zoomByStep(direction: 1 | -1): void {
+    const host = this.scroller()?.nativeElement;
+    if (host === undefined) return;
+    this.zoomTo(this._scale() + direction * SCALE_STEP, host.clientWidth / 2, host.clientHeight / 2);
+  }
+
+  /**
+   * Core zoom math shared by wheel and button zooming: re-anchors scroll so
+   * the canvas point under `(anchorViewportX, anchorViewportY)` — host-viewport
+   * pixels — stays visually fixed as `scale()` moves to `clampScale(nextScaleRaw)`.
+   */
+  private zoomTo(nextScaleRaw: number, anchorViewportX: number, anchorViewportY: number): void {
+    const host = this.scroller()?.nativeElement;
+    if (host === undefined) return;
+
+    const previousScale = this._scale();
+    const nextScale = clampScale(nextScaleRaw);
     if (nextScale === previousScale) return;
 
-    const rect = host.getBoundingClientRect();
-    const viewportX = event.clientX - rect.left;
-    const viewportY = event.clientY - rect.top;
-
-    // The cursor's position in unscaled canvas coordinates — this is what
-    // stays fixed on screen as `scale()` changes.
-    const canvasX = (host.scrollLeft + viewportX) / previousScale;
-    const canvasY = (host.scrollTop + viewportY) / previousScale;
+    // The anchor point in unscaled canvas coordinates — this is what stays
+    // fixed on screen as `scale()` changes.
+    const canvasX = (host.scrollLeft + anchorViewportX) / previousScale;
+    const canvasY = (host.scrollTop + anchorViewportY) / previousScale;
 
     this._scale.set(nextScale);
 
@@ -208,8 +243,8 @@ export class TreeView {
     // what keeps this assignment from being silently clamped to the old size.
     afterNextRender(
       () => {
-        host.scrollLeft = canvasX * nextScale - viewportX;
-        host.scrollTop = canvasY * nextScale - viewportY;
+        host.scrollLeft = canvasX * nextScale - anchorViewportX;
+        host.scrollTop = canvasY * nextScale - anchorViewportY;
       },
       { injector: this.injector },
     );
