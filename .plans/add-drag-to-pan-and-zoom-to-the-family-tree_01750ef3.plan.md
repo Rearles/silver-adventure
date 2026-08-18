@@ -2,7 +2,7 @@
 title: "Add drag-to-pan and zoom controls to the family tree view"
 type: "feature"
 created: "2026-08-18"
-status: not-started
+status: in-progress
 related: ["add-inline-person-creation-for-parent-child-spouse-relationships_22551bcf.plan.md", "rework-event-dates-and-multi-timeline-linking_5a23573c.plan.md"]
 ---
 
@@ -14,7 +14,7 @@ related: ["add-inline-person-creation-for-parent-child-spouse-relationships_2255
 
 ## Todos
 
-- [ ] Add `scale` signal + zoom clamp constants to `TreeView` (tree-view.ts)
+- [x] Add `scale` signal + zoom clamp constants to `TreeView` (tree-view.ts)
 - [ ] Wrap `.tree-canvas` in a fixed-size `.tree-canvas-sizer` div in tree-view.html, sized to `layout().width/height * scale()`
 - [ ] Apply `transform: scale()` with `transform-origin: 0 0` to `.tree-canvas` in tree-view.scss
 - [ ] Add pointer-drag panning on `.tree-scroll` (pointerdown/move/up adjusting `scrollLeft`/`scrollTop`), suppressing `onSelect` when a drag exceeded a small movement threshold

@@ -5,12 +5,23 @@ import {
   effect,
   inject,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { layoutTree } from '../../models/tree-layout';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
 import { PersonCard } from '../person-card/person-card';
+
+/** Zoomed all the way out, the smallest cards' text should stay legible; zoomed all the way in, a single card should still fit the viewport comfortably. */
+export const MIN_SCALE = 0.4;
+export const MAX_SCALE = 2.5;
+/** Step applied per wheel notch or per click of the zoom buttons. */
+export const SCALE_STEP = 0.15;
+
+function clampScale(value: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
+}
 
 /**
  * Renders the family tree from the currently filtered pool.
@@ -38,6 +49,10 @@ export class TreeView {
   readonly highlightedPersonIds = this.viewMode.highlightedPersonIds;
 
   readonly layout = computed(() => layoutTree(this.treeData.filteredPeople()));
+
+  /** Current zoom level of the tree canvas; 1 = 100%. Panning is native scroll, so it has no signal of its own. */
+  private readonly _scale = signal<number>(1);
+  readonly scale = this._scale.asReadonly();
 
   /**
    * Distinguishes "the world has no one at all" from "the filter matched no
