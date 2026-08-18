@@ -234,6 +234,24 @@ describe('applyOverlapFilter', () => {
     expect(tiers.get('heir')).toBe('adjacent');
   });
 
+  it('combines nations and houses as a union — matching either is enough, not both', () => {
+    // Two people connected to nothing else, each qualifying on a different
+    // dimension: this is the exact shape the old AND-semantics could never
+    // produce as core (neither matches BOTH the selected nation and house).
+    const combined = [
+      person({ id: 'ashaNoble', nation: 'Asha', house: 'Unrelated' }),
+      person({ id: 'sparrowCommoner', nation: 'Elsewhere', house: 'Sparrow' }),
+      person({ id: 'outsider', nation: 'Elsewhere', house: 'Unrelated' }),
+    ];
+
+    const filtered = applyOverlapFilter(combined, { nations: ['Asha'], houses: ['Sparrow'] });
+    const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
+
+    expect(tiers.get('ashaNoble')).toBe('core');
+    expect(tiers.get('sparrowCommoner')).toBe('core');
+    expect(tiers.has('outsider')).toBe(false);
+  });
+
   it('does not reach through a parent edge the player projection has removed', () => {
     // hideParentage is applied before filtering, so the edge is simply gone.
     const projected = toPlayerPeople([
