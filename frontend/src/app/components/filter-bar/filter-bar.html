@@ -6,7 +6,7 @@
         type="button"
         class="chip-btn"
         [class.active]="filter().nations.length === 0"
-        (click)="onNationChange('')"
+        (click)="onNationClick($event, null)"
       >
         All
       </button>
@@ -15,7 +15,8 @@
           type="button"
           class="chip-btn"
           [class.active]="filter().nations.includes(nation)"
-          (click)="onNationChange(nation)"
+          title="Click to jump here; Ctrl/Cmd-click to combine with the current selection"
+          (click)="onNationClick($event, nation)"
         >
           {{ nation }}
         </button>
@@ -30,7 +31,7 @@
         type="button"
         class="chip-btn"
         [class.active]="filter().houses.length === 0"
-        (click)="onHouseChange('')"
+        (click)="onHouseClick($event, null)"
       >
         All
       </button>
@@ -40,7 +41,8 @@
           class="chip-btn house-chip"
           [class.active]="filter().houses.includes(house)"
           [style.--house]="colorFor(house)"
-          (click)="onHouseChange(house)"
+          title="Click to jump here; Ctrl/Cmd-click to combine with the current selection"
+          (click)="onHouseClick($event, house)"
         >
           <span class="house-dot"></span>
           {{ house }}

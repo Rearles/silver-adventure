@@ -110,21 +110,38 @@ export class ViewModeService {
     this._filter.set(filter);
   }
 
-  // TODO(rework-event-dates plan, next step): these still replace the whole
-  // selection (old single-select behaviour) rather than the planned
-  // click-to-jump/Ctrl-click-to-combine split — that's the next step's real
-  // work. Kept as single-element arrays for now so FilterBar keeps compiling
-  // and behaving exactly as before against the new array-shaped WorldFilter.
-
-  /** Changing nation clears house, since houses are scoped to a nation. */
-  setNation(nation: string | null): void {
-    this._filter.set({ nations: nation === null ? [] : [nation], houses: [] });
+  /**
+   * Plain-click behaviour: fast single-timeline jump. Replaces the *whole*
+   * selection with just this one nation (clearing any selected houses too —
+   * jumping means "show only this timeline"), or with nothing at all when
+   * `nation` is `null` (the "All" chip — a full reset, matching `jumpToHouse(null)`,
+   * so either group's "All" behaves identically rather than clearing only
+   * its own facet and leaving the other silently still filtering).
+   */
+  jumpToNation(nation: string | null): void {
+    this._filter.set(nation === null ? EMPTY_WORLD_FILTER : { nations: [nation], houses: [] });
   }
 
-  setHouse(house: string | null): void {
+  jumpToHouse(house: string | null): void {
+    this._filter.set(house === null ? EMPTY_WORLD_FILTER : { nations: [], houses: [house] });
+  }
+
+  /** Ctrl/Cmd-click behaviour: adds/removes one nation from the current selection, to combine timelines. */
+  toggleNation(nation: string): void {
     this._filter.update((current) => ({
       ...current,
-      houses: house === null ? [] : [house],
+      nations: current.nations.includes(nation)
+        ? current.nations.filter((n) => n !== nation)
+        : [...current.nations, nation],
+    }));
+  }
+
+  toggleHouse(house: string): void {
+    this._filter.update((current) => ({
+      ...current,
+      houses: current.houses.includes(house)
+        ? current.houses.filter((h) => h !== house)
+        : [...current.houses, house],
     }));
   }
 
