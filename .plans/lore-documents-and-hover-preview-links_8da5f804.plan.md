@@ -31,7 +31,7 @@ Confirmed decisions (already answered by user): Organization entity type for Hou
 - [x] Extend `frontend/src/app/app.ts` — inject `LoreDataService`, call `loreData.load()` in constructor, fold `loreData.dirty()` into the `dirty` computed, add a third `postWorld(.../lore, ...)` call to `onSaveWorld()`, a third `revert()` call to `onRevert()`, and a third `downloadTextFile()` call to `onExportBackup()`
 - [x] Wire `<app-wiki-text>` into existing read-only text displays: person notes (`frontend/src/app/components/gm-dossier/` or wherever `Person.notes` renders) and event description (`frontend/src/app/components/timeline-view/timeline-view.html`)
 - [x] Update root `README.md` with a short "Lore pages" section documenting `[[Wiki Link]]` syntax and where lore lives in the UI
-- [ ] Test: add `toPlayerLore()` cases to `frontend/src/app/models/projection.spec.ts` (hidden doc dropped, cross-ref scrubbing for people/events/lore)
+- [x] Test: add `toPlayerLore()` cases to `frontend/src/app/models/projection.spec.ts` (hidden doc dropped, cross-ref scrubbing for people/events/lore)
 - [ ] Build/typecheck the frontend (`npm run build` or `ng build`) and fix any compile errors surfaced by the new files
 
 ## Notes

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { DynastyEvent } from './dynasty-event';
+import type { LoreDoc } from './lore-doc';
 import type { Person } from './person';
 import {
   applyOverlapFilter,
   collectHouses,
   collectNations,
   toPlayerEvents,
+  toPlayerLore,
   toPlayerPeople,
 } from './projection';
 
@@ -32,6 +34,19 @@ function event(overrides: Partial<DynastyEvent> & Pick<DynastyEvent, 'id'>): Dyn
     relatedPersonIds: [],
     nations: [],
     houses: [],
+    visibility: 'known',
+    ...overrides,
+  };
+}
+
+function lore(overrides: Partial<LoreDoc> & Pick<LoreDoc, 'id'>): LoreDoc {
+  return {
+    title: overrides.id,
+    type: 'topic',
+    body: '',
+    relatedPersonIds: [],
+    relatedEventIds: [],
+    relatedLoreIds: [],
     visibility: 'known',
     ...overrides,
   };
@@ -175,6 +190,72 @@ describe('toPlayerEvents', () => {
 
     expect(projected[0].relatedPersonIds).toEqual(['p1']);
     expect(JSON.stringify(projected)).not.toContain('secret');
+  });
+});
+
+describe('toPlayerLore', () => {
+  it('removes lore pages whose visibility is hidden', () => {
+    const projected = toPlayerLore(
+      [lore({ id: 'l1' }), lore({ id: 'l2', visibility: 'hidden' })],
+      [],
+      [],
+    );
+
+    expect(projected.map((doc) => doc.id)).toEqual(['l1']);
+  });
+
+  it('scrubs hidden people out of relatedPersonIds on a visible page', () => {
+    const projected = toPlayerLore(
+      [lore({ id: 'l1', relatedPersonIds: ['p1', 'secret'] })],
+      [person({ id: 'p1' }), person({ id: 'secret', visibility: 'hidden' })],
+      [],
+    );
+
+    expect(projected[0].relatedPersonIds).toEqual(['p1']);
+    expect(JSON.stringify(projected)).not.toContain('secret');
+  });
+
+  it('scrubs hidden events out of relatedEventIds on a visible page', () => {
+    const projected = toPlayerLore(
+      [lore({ id: 'l1', relatedEventIds: ['e1', 'secretEvent'] })],
+      [],
+      [event({ id: 'e1' }), event({ id: 'secretEvent', visibility: 'hidden' })],
+    );
+
+    expect(projected[0].relatedEventIds).toEqual(['e1']);
+    expect(JSON.stringify(projected)).not.toContain('secretEvent');
+  });
+
+  it('scrubs hidden sibling pages out of relatedLoreIds, so one visible page cannot out a secret one', () => {
+    const projected = toPlayerLore(
+      [
+        lore({ id: 'l1', relatedLoreIds: ['l2', 'secretLore'] }),
+        lore({ id: 'l2' }),
+        lore({ id: 'secretLore', visibility: 'hidden' }),
+      ],
+      [],
+      [],
+    );
+
+    const l1 = projected.find((doc) => doc.id === 'l1');
+    expect(l1?.relatedLoreIds).toEqual(['l2']);
+    expect(JSON.stringify(projected)).not.toContain('secretLore');
+  });
+
+  it('leaves an ordinary known page otherwise untouched', () => {
+    const projected = toPlayerLore(
+      [lore({ id: 'l1', title: 'House of Milltree', type: 'organization', subjectName: 'Milltree', body: 'Founded in antiquity.' })],
+      [],
+      [],
+    );
+
+    expect(projected[0]).toMatchObject({
+      id: 'l1',
+      title: 'House of Milltree',
+      type: 'organization',
+      subjectName: 'Milltree',
+      body: 'Founded in antiquity.',
+    });
   });
 });
 
