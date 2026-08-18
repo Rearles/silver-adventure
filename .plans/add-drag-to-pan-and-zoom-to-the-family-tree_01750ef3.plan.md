@@ -20,7 +20,7 @@ related: ["add-inline-person-creation-for-parent-child-spouse-relationships_2255
 - [x] Add pointer-drag panning on `.tree-scroll` (pointerdown/move/up adjusting `scrollLeft`/`scrollTop`), suppressing `onSelect` when a drag exceeded a small movement threshold
 - [x] Add wheel-to-zoom on `.tree-scroll`, adjusting `scale()` clamped to [min, max] and re-anchoring scroll position under the cursor
 - [x] Add zoom in/out/reset buttons to the tree toolbar, wired to `scale()`
-- [ ] Update the highlighted-person `scrollTo` effect in tree-view.ts to account for `scale()` when computing target offsets
+- [x] Update the highlighted-person `scrollTo` effect in tree-view.ts to account for `scale()` when computing target offsets
 - [ ] Test pan/zoom in a new `tree-view.spec.ts` — drag updates scroll position, wheel updates `scale()` within clamp bounds, click without drag still selects a card
 
 ## Notes

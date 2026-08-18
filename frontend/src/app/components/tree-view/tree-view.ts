@@ -90,27 +90,40 @@ export class TreeView {
   private suppressNextSelect = false;
 
   constructor() {
-    // Timeline → tree: centre the first person an event refers to.
+    // Timeline → tree: centre the first person an event refers to. Also
+    // re-centres whenever `scale()` changes while a highlight is active,
+    // since `target.x/y/width/height` come from `layoutTree()` in unscaled
+    // canvas coordinates and must be scaled here to land in `scrollLeft`/
+    // `scrollTop`, which operate in the sizer's scaled coordinate space.
     effect(() => {
       const highlighted = this.highlightedPersonIds();
       if (highlighted.size === 0) return;
 
       const target = this.layout().nodes.find((node) => highlighted.has(node.person.id));
       const host = this.scroller()?.nativeElement;
+      const scale = this._scale();
       if (target === undefined || host === undefined) return;
 
-      const left = target.x + target.width / 2 - host.clientWidth / 2;
-      const top = target.y + target.height / 2 - host.clientHeight / 2;
+      const left = (target.x + target.width / 2) * scale - host.clientWidth / 2;
+      const top = (target.y + target.height / 2) * scale - host.clientHeight / 2;
 
-      // This runs inside change detection, so it must not throw where
-      // Element.scrollTo is missing (jsdom, older browsers) — fall back to
-      // setting the scroll offsets directly.
-      if (typeof host.scrollTo === 'function') {
-        host.scrollTo({ left, top, behavior: 'smooth' });
-      } else {
-        host.scrollLeft = left;
-        host.scrollTop = top;
-      }
+      // Deferred past render: if `scale()` just changed, the sizer's scaled
+      // dimensions (and thus the valid scroll range) only land in the DOM
+      // after Angular re-renders — scrolling before that lets the browser
+      // clamp this against the stale, pre-zoom scroll range (see zoomTo()).
+      afterNextRender(
+        () => {
+          // Must not throw where Element.scrollTo is missing (jsdom, older
+          // browsers) — fall back to setting the scroll offsets directly.
+          if (typeof host.scrollTo === 'function') {
+            host.scrollTo({ left, top, behavior: 'smooth' });
+          } else {
+            host.scrollLeft = left;
+            host.scrollTop = top;
+          }
+        },
+        { injector: this.injector },
+      );
     });
   }
 
