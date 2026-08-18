@@ -54,9 +54,14 @@ export class TimelineDataService {
    * Events after the nation/house filter, the year range, and any person
    * selection made in the tree.
    *
-   * The nation/house test mirrors the tree's overlap rule: an event counts if its
-   * own nation/house matches *or* if it involves anyone in the filtered people
-   * set, so a cross-house wedding stays on the timeline for both houses.
+   * The nation/house test mirrors the tree's overlap rule: an event counts if
+   * *any* of its own `nations`/`houses` tags matches *or* if it involves anyone
+   * in the filtered people set, so a cross-house wedding stays on the timeline
+   * for both houses. Range/sort anchor on `startYear` only — `endYear` (when
+   * present) doesn't currently widen the range match.
+   *
+   * `filter.nation`/`filter.house` are still singular here — `WorldFilter`
+   * itself becomes multi-select in a later step of this same plan.
    */
   readonly filteredEvents = computed<DynastyEvent[]>(() => {
     const filter = this.viewMode.filter();
@@ -68,8 +73,8 @@ export class TimelineDataService {
 
     return this.displayEvents()
       .filter((event) => {
-        if (from !== null && event.year < from) return false;
-        if (to !== null && event.year > to) return false;
+        if (from !== null && event.startYear < from) return false;
+        if (to !== null && event.startYear > to) return false;
 
         if (selectedPersonId !== null && !event.relatedPersonIds.includes(selectedPersonId)) {
           return false;
@@ -78,18 +83,18 @@ export class TimelineDataService {
         if (filter.nation === null && filter.house === null) return true;
 
         const ownMatch =
-          (filter.nation === null || event.nation === filter.nation) &&
-          (filter.house === null || event.house === filter.house);
+          (filter.nation === null || event.nations.includes(filter.nation)) &&
+          (filter.house === null || event.houses.includes(filter.house));
         if (ownMatch) return true;
 
         return event.relatedPersonIds.some((id) => peopleInScope.has(id));
       })
-      .sort((a, b) => a.year - b.year || a.title.localeCompare(b.title));
+      .sort((a, b) => a.startYear - b.startYear || a.title.localeCompare(b.title));
   });
 
   /** Year bounds across the events currently in view, for the range slider. */
   readonly yearBounds = computed<{ min: number; max: number } | null>(() => {
-    const years = this.displayEvents().map((event) => event.year);
+    const years = this.displayEvents().map((event) => event.startYear);
     if (years.length === 0) return null;
     return { min: Math.min(...years), max: Math.max(...years) };
   });

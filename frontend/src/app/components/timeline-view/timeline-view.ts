@@ -168,13 +168,17 @@ export class TimelineView {
     this.timelineData.addEvent({
       title: value.title.trim(),
       type: value.type,
-      year: value.year,
+      // TODO(rework-event-dates plan, later step): the form still only collects a
+      // single year/nation/house — startYear/nations/houses are bridged from those
+      // as one-element (or empty) values until the form itself gains Start/End
+      // date fields and a real multi-select nation/house tag picker.
+      startYear: value.year,
+      nations: value.nation.trim() !== '' ? [value.nation.trim()] : [],
+      houses: value.house.trim() !== '' ? [value.house.trim()] : [],
       relatedPersonIds: selected === null ? [] : [selected],
       visibility: value.visibility,
       ...(value.era.trim() !== '' ? { era: value.era.trim() } : {}),
       ...(value.description.trim() !== '' ? { description: value.description.trim() } : {}),
-      ...(value.nation.trim() !== '' ? { nation: value.nation.trim() } : {}),
-      ...(value.house.trim() !== '' ? { house: value.house.trim() } : {}),
     });
 
     this.showAddForm.set(false);

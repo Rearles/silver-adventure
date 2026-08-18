@@ -28,8 +28,10 @@ function event(overrides: Partial<DynastyEvent> & Pick<DynastyEvent, 'id'>): Dyn
   return {
     title: overrides.id,
     type: 'other',
-    year: 1400,
+    startYear: 1400,
     relatedPersonIds: [],
+    nations: [],
+    houses: [],
     visibility: 'known',
     ...overrides,
   };

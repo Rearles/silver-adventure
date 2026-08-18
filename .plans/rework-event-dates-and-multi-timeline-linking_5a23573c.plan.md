@@ -2,7 +2,7 @@
 title: "Rework event dates to Start/End and add multi-person, multi-nation/house timeline linking"
 type: "feature"
 created: "2026-08-18"
-status: not-started
+status: in-progress
 related: ["add-inline-person-creation-for-parent-child-spouse-relationships_22551bcf.plan.md", "add-drag-to-pan-and-zoom-to-the-family-tree_01750ef3.plan.md"]
 ---
 
@@ -18,7 +18,7 @@ The user's campaign will have events across 3 nations, 3 houses, and "a couple o
 
 ## Todos
 
-- [ ] Update `DynastyEvent` (dynasty-event.ts): `year`→`startYear` (required) + `startMonth?`/`startDay?`; add `endYear?`/`endMonth?`/`endDay?` (mirrors `Person`'s birth/death fields); `nation?`/`house?` → `nations: string[]`/`houses: string[]`. Update `TimelineDataService` (its sole non-template consumer) — `filteredEvents` sort/range/own-match test and `yearBounds` — to match
+- [x] Update `DynastyEvent` (dynasty-event.ts): `year`→`startYear` (required) + `startMonth?`/`startDay?`; add `endYear?`/`endMonth?`/`endDay?` (mirrors `Person`'s birth/death fields); `nation?`/`house?` → `nations: string[]`/`houses: string[]`. Update `TimelineDataService` (its sole non-template consumer) — `filteredEvents` sort/range/own-match test and `yearBounds` — to match. *Widened while executing:* `TimelineDataService` wasn't actually the only real consumer — `timeline-view.ts`'s `onAddEvent()` draft object and `timeline-view.html`'s `{{ event.year }}` display, plus `projection.spec.ts`'s `event()` test-fixture helper, all needed the same mechanical rename to keep `npm test` compiling green. Bridged minimally (single-value form fields wrapped into one-element arrays) rather than building the real Start/End/multi-select UI early — that's still todo 4's job.
 - [ ] Update `WorldFilter`/`EMPTY_WORLD_FILTER` (world.ts) to `nations: string[]`/`houses: string[]`. Update `projection.ts`'s `matchesFilter`/`applyOverlapFilter` (its sole consumer) for union-of-selected-nations/houses matching, for both people and events
 - [ ] Replace `setNation`/`setHouse` in `ViewModeService` with `jumpToNation`/`jumpToHouse` (replace selection) and `toggleNation`/`toggleHouse` (add/remove from selection); update `FilterBar` ts/html so a plain chip click jumps (replaces the selection, for fast single-timeline switching) and a Ctrl/Cmd-click toggles that chip into/out of the current selection (for combining)
 - [ ] Update the Add-Event form in timeline-view.ts/html: Start (year required, month/day optional) + End (year, month, day all optional) fields replacing the single Year field, mirroring `PersonForm`'s birth/death date inputs; update event display markup for the date range
