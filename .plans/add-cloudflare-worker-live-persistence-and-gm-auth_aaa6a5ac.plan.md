@@ -17,7 +17,7 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 - [x] Create `frontend/worker/index.ts` (Worker entry) and `frontend/worker/world-room.ts` (Durable Object class)
 - [x] Update `frontend/wrangler.jsonc` — add `main`, R2 bucket binding, DO binding + migrations block
 - [x] Run `wrangler r2 bucket create` for the world-data bucket; record the name used — `age-of-aether-world-data`
-- [ ] Implement `GET /api/world/:world` in index.ts — reads the JSON blob from R2
+- [x] Implement `GET /api/world/:world` in index.ts — reads the JSON blob from R2
 - [ ] Implement `POST /api/auth` in index.ts — checks `GM_PASSWORD` secret, issues signed session token
 - [ ] Implement `POST /api/world/:world` in index.ts — verify token, write R2, notify the DO
 - [ ] Implement `WorldRoom` DO — WebSocket upgrade handling + broadcast on write notification
@@ -42,6 +42,8 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 **Worker source location:** lives at `frontend/worker/`, alongside but separate from the Angular app (`frontend/src/app/`) and the Angular build (`frontend/dist/`) — `ng build` must not pick up or attempt to compile the Worker TypeScript, and `wrangler deploy`'s bundling must not need the Angular toolchain. Verify this boundary holds (e.g. `tsconfig.app.json`'s include/exclude) as part of the first two todos, not as an afterthought.
 
 **Testing approach:** no existing Worker/backend test setup in this repo. Use Miniflare (via `wrangler`'s built-in local dev/test support, or `@cloudflare/vitest-pool-workers` since the frontend already uses Vitest) to exercise auth token issuance/verification, the R2 read/write round trip, and DO broadcast fan-out, without needing a real deployed Worker.
+
+**Local runtime constraint discovered mid-implementation:** the actual Workers runtime binary (`workerd`, used by both `wrangler dev` and Miniflare/`@cloudflare/vitest-pool-workers`) refuses to start on this dev machine — macOS 12.6.0, below workerd's 13.5.0 minimum. `wrangler deploy --dry-run` still works (bundling/config validation only, no runtime needed) and is what's being used per-todo for verification instead. Todo 14 (the formal test step) will need a real decision: test against an actual deployed Worker instead of local Miniflare, get the dev machine's OS updated, or run the test suite somewhere else (CI). Revisit at that todo.
 
 **Sequencing risk:** this migrates the durable source of truth off git entirely, which is a bigger blast radius than a typical feature. Treat "R2 has a verified good copy before the old save path is removed" and "the old save/download path is fully replaced, not left half-working" as hard gates — don't delete `file-export.ts`'s write path until the new authenticated write path is proven end-to-end against the deployed Worker.
 
