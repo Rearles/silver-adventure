@@ -1,6 +1,8 @@
 import {
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -39,6 +41,7 @@ function clampScale(value: number): number {
 export class TreeView {
   private readonly treeData = inject(TreeDataService);
   private readonly viewMode = inject(ViewModeService);
+  private readonly injector = inject(Injector);
 
   /** Bubbled to the shell, which owns the form and dossier panels. */
   readonly editPerson = output<string>();
@@ -172,6 +175,44 @@ export class TreeView {
     this.scroller()?.nativeElement.releasePointerCapture(event.pointerId);
     this.dragState = null;
     this._isDragging.set(false);
+  }
+
+  /**
+   * Scroll wheel zooms (this canvas has no other use for it — panning is
+   * drag, not wheel-scroll), keeping the point under the cursor visually
+   * fixed rather than zooming toward the canvas origin.
+   */
+  onWheel(event: WheelEvent): void {
+    const host = this.scroller()?.nativeElement;
+    if (host === undefined) return;
+    event.preventDefault();
+
+    const previousScale = this._scale();
+    const direction = event.deltaY > 0 ? -1 : 1;
+    const nextScale = clampScale(previousScale + direction * SCALE_STEP);
+    if (nextScale === previousScale) return;
+
+    const rect = host.getBoundingClientRect();
+    const viewportX = event.clientX - rect.left;
+    const viewportY = event.clientY - rect.top;
+
+    // The cursor's position in unscaled canvas coordinates — this is what
+    // stays fixed on screen as `scale()` changes.
+    const canvasX = (host.scrollLeft + viewportX) / previousScale;
+    const canvasY = (host.scrollTop + viewportY) / previousScale;
+
+    this._scale.set(nextScale);
+
+    // The sizer's width/height (and thus the scrollable range) only reflect
+    // the new scale after Angular re-renders — deferring past that render is
+    // what keeps this assignment from being silently clamped to the old size.
+    afterNextRender(
+      () => {
+        host.scrollLeft = canvasX * nextScale - viewportX;
+        host.scrollTop = canvasY * nextScale - viewportY;
+      },
+      { injector: this.injector },
+    );
   }
 
   onToggleVisibility(personId: string): void {
