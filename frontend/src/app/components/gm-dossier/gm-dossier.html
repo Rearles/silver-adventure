@@ -44,6 +44,18 @@
     }
 
     <div class="dossier-body">
+      @if (person(); as subject) {
+        @if (subject.notes) {
+          <div class="section">
+            <div class="section-label">
+              <lucide-icon [img]="NotesIcon" [size]="13" />
+              Notes
+            </div>
+            <app-wiki-text [text]="subject.notes" />
+          </div>
+        }
+      }
+
       <div class="section">
         <div class="section-label">
           <lucide-icon [img]="UserIcon" [size]="13" />

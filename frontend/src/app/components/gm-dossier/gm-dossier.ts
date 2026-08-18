@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, output } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   Crown,
+  FileText,
   Flag,
   Handshake,
   LucideAngularModule,
@@ -14,6 +15,7 @@ import { houseColor } from '../../models/house-colors';
 import type { GmNotes } from '../../models/person';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
+import { WikiText } from '../wiki-text/wiki-text';
 
 /** Splits a comma-separated field into a trimmed list, dropping blanks. */
 function toList(raw: string): string[] {
@@ -34,7 +36,7 @@ function toList(raw: string): string[] {
  */
 @Component({
   selector: 'app-gm-dossier',
-  imports: [LucideAngularModule, ReactiveFormsModule],
+  imports: [LucideAngularModule, ReactiveFormsModule, WikiText],
   templateUrl: './gm-dossier.html',
   styleUrl: './gm-dossier.scss',
 })
@@ -49,6 +51,7 @@ export class GmDossier {
   readonly SwordsIcon = Swords;
   readonly TargetIcon = Target;
   readonly FlagIcon = Flag;
+  readonly NotesIcon = FileText;
   readonly CloseIcon = X;
 
   readonly personId = input.required<string>();

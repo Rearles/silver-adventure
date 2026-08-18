@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { Eye, EyeOff, LucideAngularModule, Pencil, Trash2, type LucideIconData } from 'lucide-angular';
 import { DatePicker, type DatePartsValue } from '../date-picker/date-picker';
+import { WikiText } from '../wiki-text/wiki-text';
 import {
   DYNASTY_EVENT_TYPES,
   type DynastyEvent,
@@ -60,7 +61,7 @@ function chronologyValidator(group: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-timeline-view',
-  imports: [LucideAngularModule, ReactiveFormsModule, DatePicker],
+  imports: [LucideAngularModule, ReactiveFormsModule, DatePicker, WikiText],
   templateUrl: './timeline-view.html',
   styleUrl: './timeline-view.scss',
 })

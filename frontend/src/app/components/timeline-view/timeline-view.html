@@ -262,7 +262,15 @@
               [class.is-selected]="selectedEventId() === event.id"
               [class.is-hidden-record]="event.visibility === 'hidden'"
             >
-              <button type="button" class="event-main" (click)="onSelectEvent(event)">
+              <!-- A `<div role="button">`, not a `<button>` — the description below can
+                   contain `[[wiki link]]` buttons, and a `<button>` can't nest one. -->
+              <div
+                class="event-main"
+                role="button"
+                tabindex="0"
+                (click)="onSelectEvent(event)"
+                (keydown.enter)="onSelectEvent(event)"
+              >
                 <span
                   class="marker"
                   [style.--type-color]="colorFor(event.type)"
@@ -279,7 +287,9 @@
                   </span>
                   <span class="title">{{ event.title }}</span>
                   @if (event.description) {
-                    <span class="desc">{{ event.description }}</span>
+                    <div class="desc">
+                      <app-wiki-text [text]="event.description" />
+                    </div>
                   }
                   @if (event.relatedPersonIds.length > 0) {
                     <span class="people">
@@ -289,7 +299,7 @@
                     </span>
                   }
                 </span>
-              </button>
+              </div>
 
               @if (isGmView()) {
                 <div class="event-actions">
