@@ -26,7 +26,7 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 - [x] Update `onSaveWorld`/`onRevert` in app.ts to call the authenticated write API; retire file-export.ts's save path
 - [x] Gate the `gm` transition in `ViewModeService.setMode`/`toggleMode` behind a password prompt + valid session token
 - [x] Seed R2 from `data/world.json` and `data/world-events.json` via a one-time script or `wrangler r2 object put`
-- [ ] Update README.md — document the live-API architecture; mark git data flow as seed-only
+- [x] Update README.md — document the live-API architecture; mark git data flow as seed-only
 - [ ] Test Worker auth/read/write/broadcast logic (new `frontend/worker/*.spec.ts`, Miniflare-based)
 
 ## Notes
