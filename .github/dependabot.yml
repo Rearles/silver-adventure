@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # The Angular app + Cloudflare Worker (they share one package.json).
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # The tools/ console app (DynastyTools.sln).
+  - package-ecosystem: "nuget"
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+
+  # Keeps ci.yml / codeql.yml's actions/* references current too.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
