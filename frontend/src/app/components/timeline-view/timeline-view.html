@@ -166,19 +166,77 @@
           </select>
         </div>
       </div>
-      <div class="add-row">
-        <div class="field">
-          <label for="tl-nation">Nation</label>
-          <input id="tl-nation" formControlName="nation" />
-        </div>
-        <div class="field">
-          <label for="tl-house">House</label>
-          <input id="tl-house" formControlName="house" />
-        </div>
-      </div>
       <div class="field">
         <label for="tl-desc">Description</label>
         <textarea id="tl-desc" formControlName="description"></textarea>
+      </div>
+
+      <!-- ── Nation/house timeline tags ─────────────────────────────────── -->
+      <div class="add-row">
+        <div class="field">
+          <label for="tl-nation-search">Nation timelines</label>
+          <div class="chips">
+            @for (nation of eventNations(); track nation) {
+              <span class="chip">
+                {{ nation }}
+                <button type="button" (click)="removeNationTag(nation)" aria-label="Remove nation">✕</button>
+              </span>
+            }
+            @if (eventNations().length === 0) {
+              <span class="chips-empty">Not tagged to a nation</span>
+            }
+          </div>
+          <input
+            id="tl-nation-search"
+            [value]="nationTagSearch()"
+            (input)="nationTagSearch.set($any($event.target).value)"
+            placeholder="+ add a nation timeline…"
+            autocomplete="off"
+          />
+          @if (nationTagSearch() !== '' && nationTagResults().length > 0) {
+            <ul class="results">
+              @for (nation of nationTagResults(); track nation) {
+                <li>
+                  <button type="button" (click)="addNationTag(nation)">
+                    <span class="r-name">{{ nation }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        <div class="field">
+          <label for="tl-house-search">House timelines</label>
+          <div class="chips">
+            @for (house of eventHouses(); track house) {
+              <span class="chip">
+                {{ house }}
+                <button type="button" (click)="removeHouseTag(house)" aria-label="Remove house">✕</button>
+              </span>
+            }
+            @if (eventHouses().length === 0) {
+              <span class="chips-empty">Not tagged to a house</span>
+            }
+          </div>
+          <input
+            id="tl-house-search"
+            [value]="houseTagSearch()"
+            (input)="houseTagSearch.set($any($event.target).value)"
+            placeholder="+ add a house timeline…"
+            autocomplete="off"
+          />
+          @if (houseTagSearch() !== '' && houseTagResults().length > 0) {
+            <ul class="results">
+              @for (house of houseTagResults(); track house) {
+                <li>
+                  <button type="button" (click)="addHouseTag(house)">
+                    <span class="r-name">{{ house }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
       </div>
 
       <!-- ── People picker ──────────────────────────────────────────────── -->

@@ -13,6 +13,7 @@ import {
   type DynastyEventType,
 } from '../../models/dynasty-event';
 import type { Visibility } from '../../models/person';
+import { collectHouses } from '../../models/projection';
 import { TimelineDataService } from '../../services/timeline-data.service';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
@@ -107,6 +108,37 @@ export class TimelineView {
       .slice(0, 8);
   });
 
+  /**
+   * Nation/house timeline tags, same signal-not-form-control pattern as
+   * `relatedPersonIds` above. Deliberately unscoped by the tree's current
+   * nation/house filter (unlike `TreeDataService.houses`) — tagging an event
+   * shouldn't be limited to whatever the GM happens to have the tree filtered
+   * to right now.
+   */
+  readonly eventNations = signal<string[]>([]);
+  readonly eventHouses = signal<string[]>([]);
+  readonly nationTagSearch = signal<string>('');
+  readonly houseTagSearch = signal<string>('');
+
+  private readonly allHouses = computed<string[]>(() => collectHouses(this.treeData.gmPeople(), null));
+
+  readonly nationTagResults = computed(() => {
+    const chosen = new Set(this.eventNations());
+    const term = this.nationTagSearch().trim().toLowerCase();
+    return this.treeData
+      .nations()
+      .filter((nation) => !chosen.has(nation) && (term === '' || nation.toLowerCase().includes(term)))
+      .slice(0, 8);
+  });
+
+  readonly houseTagResults = computed(() => {
+    const chosen = new Set(this.eventHouses());
+    const term = this.houseTagSearch().trim().toLowerCase();
+    return this.allHouses()
+      .filter((house) => !chosen.has(house) && (term === '' || house.toLowerCase().includes(term)))
+      .slice(0, 8);
+  });
+
   readonly addForm = this.formBuilder.nonNullable.group(
     {
       title: ['', [Validators.required]],
@@ -119,8 +151,6 @@ export class TimelineView {
       endYear: this.formBuilder.control<number | null>(null),
       era: [''],
       description: [''],
-      nation: [''],
-      house: [''],
       visibility: ['known' as Visibility],
     },
     { validators: chronologyValidator },
@@ -201,14 +231,37 @@ export class TimelineView {
     this.relatedPersonIds.update((current) => current.filter((personId) => personId !== id));
   }
 
+  addNationTag(nation: string): void {
+    this.eventNations.update((current) => [...current, nation]);
+    this.nationTagSearch.set('');
+  }
+
+  removeNationTag(nation: string): void {
+    this.eventNations.update((current) => current.filter((n) => n !== nation));
+  }
+
+  addHouseTag(house: string): void {
+    this.eventHouses.update((current) => [...current, house]);
+    this.houseTagSearch.set('');
+  }
+
+  removeHouseTag(house: string): void {
+    this.eventHouses.update((current) => current.filter((h) => h !== house));
+  }
+
   onToggleAddForm(): void {
     this.showAddForm.update((open) => !open);
     if (this.showAddForm()) {
       const selected = this.selectedPersonId();
+      const selectedPerson = selected === null ? undefined : this.treeData.personById(selected);
       // Pre-seeded with the tree-selected person, if any — still just a starting
-      // point, not a requirement; the picker below can add or remove freely.
+      // point, not a requirement; the pickers below can add or remove freely.
       this.relatedPersonIds.set(selected === null ? [] : [selected]);
       this.personSearch.set('');
+      this.eventNations.set(selectedPerson === undefined ? [] : [selectedPerson.nation]);
+      this.eventHouses.set(selectedPerson === undefined ? [] : [selectedPerson.house]);
+      this.nationTagSearch.set('');
+      this.houseTagSearch.set('');
       this.addForm.reset({
         title: '',
         type: 'other',
@@ -220,8 +273,6 @@ export class TimelineView {
         endYear: null,
         era: '',
         description: '',
-        nation: selected === null ? '' : (this.treeData.personById(selected)?.nation ?? ''),
-        house: selected === null ? '' : (this.treeData.personById(selected)?.house ?? ''),
         visibility: 'known',
       });
     }
@@ -250,11 +301,8 @@ export class TimelineView {
       ...(value.endYear !== null ? { endYear: value.endYear } : {}),
       ...(endMonth !== null ? { endMonth } : {}),
       ...(endDay !== null ? { endDay } : {}),
-      // TODO(rework-event-dates plan, later steps): the form still only collects a
-      // single nation/house — nations/houses are bridged from those as one-element
-      // (or empty) arrays until the form gains a real multi-select tag picker.
-      nations: value.nation.trim() !== '' ? [value.nation.trim()] : [],
-      houses: value.house.trim() !== '' ? [value.house.trim()] : [],
+      nations: this.eventNations(),
+      houses: this.eventHouses(),
       relatedPersonIds: this.relatedPersonIds(),
       visibility: value.visibility,
       ...(value.era.trim() !== '' ? { era: value.era.trim() } : {}),
@@ -264,5 +312,9 @@ export class TimelineView {
     this.showAddForm.set(false);
     this.relatedPersonIds.set([]);
     this.personSearch.set('');
+    this.eventNations.set([]);
+    this.eventHouses.set([]);
+    this.nationTagSearch.set('');
+    this.houseTagSearch.set('');
   }
 }
