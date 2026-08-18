@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - claude/silver-adventure-refactored-tribble-mpjf1p
+
+# A newer push to the same PR/branch cancels the previous run instead of
+# queueing behind it — no point finishing a check on code that's already stale.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend & Worker tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run Angular app tests
+        working-directory: frontend
+        run: npm test
+      - name: Run Worker tests
+        working-directory: frontend
+        run: npm run test:worker
+
+  tools:
+    name: C# tool tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run tests
+        working-directory: tools
+        run: dotnet test

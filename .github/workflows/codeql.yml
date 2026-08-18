@@ -1,0 +1,45 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - claude/silver-adventure-refactored-tribble-mpjf1p
+  pull_request:
+    branches:
+      - claude/silver-adventure-refactored-tribble-mpjf1p
+  schedule:
+    # Weekly, so new query packs (or newly-disclosed vulnerability patterns)
+    # get a pass over the existing code even when nothing has changed.
+    - cron: '23 7 * * 3'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The Angular app + Cloudflare Worker.
+          - language: javascript-typescript
+            build-mode: none
+          # The tools/ console app.
+          - language: csharp
+            build-mode: autobuild
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'

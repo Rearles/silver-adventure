@@ -258,6 +258,25 @@ In-progress app edits are mirrored to `localStorage`, so a refresh will not lose
 work; `Revert` discards them and reloads from the live API. A `*` on the Save
 button means there are unsaved changes.
 
+## CI & security scanning
+
+Every PR runs, via `.github/workflows/`:
+
+| Check | What it covers |
+|---|---|
+| **CI** (`ci.yml`) | The frontend + Worker test suite (`npm test`, `npm run test:worker`) and the C# tool's tests (`dotnet test`) |
+| **CodeQL** (`codeql.yml`) | Static analysis across the JS/TS (Angular + Worker) and C# code, plus a weekly scheduled run so newly-disclosed vulnerability patterns get checked against unchanged code |
+| **Socket Security** | Supply-chain/dependency risk on every dependency change (already configured at the GitHub App level, not a workflow file here) |
+
+`.github/dependabot.yml` opens PRs for outdated npm (`frontend/`), NuGet
+(`tools/`), and GitHub Actions dependencies weekly, on top of the
+security-only alerts GitHub already opens automatically.
+
+**Local caveat:** this dev machine only has the .NET 6 SDK installed, so
+`dotnet test` can't run locally here even though the project targets .NET 8 —
+CI installs the right SDK itself (`actions/setup-dotnet@v4`). Not a project
+issue, just this machine.
+
 ## Notes on the build
 
 - **Angular 21, not 22.** Angular 22 requires Node ≥ 22.22.3; 21 accepts Node
