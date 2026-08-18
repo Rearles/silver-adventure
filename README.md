@@ -56,8 +56,8 @@ assets) and the API (`frontend/worker/`), same origin:
 
 | Piece | What it does |
 |---|---|
-| **R2** (`age-of-aether-world-data` bucket) | Durable store — the actual `{ people: [...] }` / `{ events: [...] }` JSON, one object per world per dataset |
-| **Worker** (`frontend/worker/index.ts`) | `GET /api/world/:world[/events]` (public read, GM-vs-player projected — see below), `POST /api/auth` (password → session token), `POST /api/world/:world[/events]` (authenticated write) |
+| **R2** (`age-of-aether-world-data` bucket) | Durable store — the actual `{ people: [...] }` / `{ events: [...] }` / `{ lore: [...] }` JSON, one object per world per dataset |
+| **Worker** (`frontend/worker/index.ts`) | `GET /api/world/:world[/events\|/lore]` (public read, GM-vs-player projected — see below), `POST /api/auth` (password → session token), `POST /api/world/:world[/events\|/lore]` (authenticated write) |
 | **Durable Object** (`WorldRoom`, `frontend/worker/world-room.ts`) | One per world. Relays a broadcast over WebSocket (`/api/world/:world/live`) to every open tab after a write — this is what makes a GM's save show up for players without a reload |
 
 **GM auth:** `GM_PASSWORD` and `SESSION_SECRET` are Worker secrets
@@ -67,10 +67,11 @@ password and exchanges it for a signed session token
 every write — the client-side gate is UX, not the security boundary.
 
 **The Worker is also the trust boundary for reads, not just writes.** `GET
-/api/world/:world[/events]` and the WebSocket broadcast both run the same
-`toPlayerPeople`/`toPlayerEvents` projection the app uses for Player View —
-server-side, before the response ever reaches the network — unless the request
-carries a valid GM session token. Hidden people, `gmNotes`, and hidden events
+/api/world/:world[/events|/lore]` and the WebSocket broadcast both run the same
+`toPlayerPeople`/`toPlayerEvents`/`toPlayerLore` projection the app uses for
+Player View — server-side, before the response ever reaches the network —
+unless the request carries a valid GM session token. Hidden people, `gmNotes`,
+hidden events, and hidden lore pages
 never leave the Worker for an unauthenticated request; the client-side GM/Player
 toggle is UX layered on top of that, not the thing actually keeping them out. A
 GM's own tab sends its token on reads too, and on receiving a live push
@@ -163,6 +164,48 @@ Events are a separate collection, cross-linked to people by id rather than neste
 | `relatedPersonIds` | string[] | Every person the event involves, not just one |
 | `nations` / `houses` | string[] | Which nation/house timelines the event appears on — manually curated, independent of `relatedPersonIds` (see "Filtering keeps the overlap") |
 | `visibility` | `"known"` \| `"hidden"` | Same meaning as on Person |
+
+### LoreDoc — `{ lore: LoreDoc[] }`, served at `/api/world/{world}/lore`
+
+Long-form background articles — Houses/Nations as "organization" pages, plus
+standalone "topic" pages for things like wars, fires, or famines. One markdown-ish
+body per page.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | `l1`, `l2`, … |
+| `title` | string | Also the resolution key for `[[Wiki Link]]`s — see below |
+| `type` | `"organization"` \| `"topic"` | Drives the list/filter tabs in the Lore library |
+| `subjectName` | string? | For an `organization` page, the house/nation name it's about |
+| `body` | string | Free text; paragraph breaks are blank lines, `[[Title]]` tokens become links |
+| `relatedPersonIds` / `relatedEventIds` / `relatedLoreIds` | string[] | Manually curated cross-references, shown as chips on the article view |
+| `visibility` | `"known"` \| `"hidden"` | Same meaning as on Person/DynastyEvent |
+
+## Lore pages and `[[Wiki Link]]`s
+
+The **Lore** button in the header (visible in both GM View and Player View) opens a
+drawer listing every lore page the current view can see — Houses/Nations and
+standalone topics, searchable and filterable by type. GMs get a "New page" button
+and, on an open article, edit/delete/visibility-toggle controls; a `hidden` page
+never reaches Player View at all, same server-side guarantee as hidden people and
+events (see "Live architecture").
+
+Any free-text field — a lore page's body, a person's notes, an event's description —
+can reference another person or lore page with `[[Title]]` syntax (the
+[Obsidian](https://obsidian.md)/Roam convention). It renders as a clickable,
+hoverable link:
+
+- **Hover** shows a floating preview card (portrait/lifespan for a person, an
+  excerpt for a lore page) after a short delay, so skimming a page doesn't spawn a
+  card on every incidental mention.
+- **Click** opens that person's card or that lore page directly.
+- Resolution is case-insensitive, tried against person names first, then lore
+  titles. A title that matches nothing still renders as a link (styled as
+  "missing"), rather than silently falling back to plain text — a not-yet-written
+  page should be visible as a gap, not hidden as one.
+
+There is no bold/italic/list markdown yet — `[[links]]` and paragraph breaks are the
+whole of it for now.
 
 ## Filtering keeps the overlap
 
