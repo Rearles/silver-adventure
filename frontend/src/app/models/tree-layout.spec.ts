@@ -187,7 +187,7 @@ describe('layoutTree', () => {
       person({ id: 'king', house: 'Valcrest' }),
       person({ id: 'consort', house: 'Doryne', spouseIds: ['king'] }),
     ];
-    const layout = layoutTree(applyOverlapFilter(pool, { nation: null, house: 'Valcrest' }));
+    const layout = layoutTree(applyOverlapFilter(pool, { nations: [], houses: ['Valcrest'] }));
     const tiers = new Map(layout.nodes.map((node) => [node.person.id, node.tier]));
 
     expect(tiers.get('king')).toBe('core');

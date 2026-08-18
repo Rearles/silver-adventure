@@ -1,4 +1,13 @@
-<div class="tree-scroll" #scroller>
+<div
+  class="tree-scroll"
+  #scroller
+  [class.is-dragging]="isDragging()"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerUp($event)"
+  (wheel)="onWheel($event)"
+>
   @if (layout().nodes.length === 0) {
     <p class="empty-state">
       @if (worldIsEmpty()) {
@@ -13,58 +22,85 @@
       }
     </p>
   } @else {
+    <!--
+      The sizer holds the *scaled* footprint so `.tree-scroll`'s native
+      scrollbars cover exactly the zoomed content; `.tree-canvas` itself stays
+      at its natural (unscaled) size and geometry, and is visually scaled via
+      a CSS transform (see tree-view.scss) rather than by recomputing layout.
+    -->
     <div
-      class="tree-canvas"
-      [style.width.px]="layout().width"
-      [style.height.px]="layout().height"
+      class="tree-canvas-sizer"
+      [style.width.px]="layout().width * scale()"
+      [style.height.px]="layout().height * scale()"
     >
-      <svg
-        class="links"
-        [attr.width]="layout().width"
-        [attr.height]="layout().height"
-        [attr.viewBox]="'0 0 ' + layout().width + ' ' + layout().height"
-        aria-hidden="true"
+      <div
+        class="tree-canvas"
+        [style.width.px]="layout().width"
+        [style.height.px]="layout().height"
+        [style.transform]="'scale(' + scale() + ')'"
       >
-        @for (link of layout().links; track link.id) {
-          <path
-            [attr.d]="link.path"
-            class="link"
-            [class.link-spouse]="link.kind === 'spouse'"
-            [class.link-parent]="link.kind === 'parent'"
-            [class.link-rumoured]="link.rumoured"
-          />
-        }
-      </svg>
-
-      @for (row of layout().generations; track row.generation) {
-        <div class="gen-label" [style.top.px]="row.y - 20">
-          Generation {{ row.generation }}
-        </div>
-      }
-
-      @for (node of layout().nodes; track node.person.id) {
-        <div
-          class="node"
-          [style.left.px]="node.x"
-          [style.top.px]="node.y"
-          [style.width.px]="node.width"
-          [style.height.px]="node.height"
+        <svg
+          class="links"
+          [attr.width]="layout().width"
+          [attr.height]="layout().height"
+          [attr.viewBox]="'0 0 ' + layout().width + ' ' + layout().height"
+          aria-hidden="true"
         >
-          <app-person-card
-            [person]="node.person"
-            [tier]="node.tier"
-            [gmView]="isGmView()"
-            [selected]="selectedPersonId() === node.person.id"
-            [highlighted]="isHighlighted(node.person.id)"
-            [dimmed]="isDimmed(node.person.id)"
-            (select)="onSelect($event)"
-            (editPerson)="editPerson.emit($event)"
-            (openDossier)="openDossier.emit($event)"
-            (toggleVisibility)="onToggleVisibility($event)"
-            (toggleHideParentage)="onToggleHideParentage($event)"
-          />
-        </div>
-      }
+          @for (link of layout().links; track link.id) {
+            <path
+              [attr.d]="link.path"
+              class="link"
+              [class.link-spouse]="link.kind === 'spouse'"
+              [class.link-parent]="link.kind === 'parent'"
+              [class.link-rumoured]="link.rumoured"
+            />
+          }
+        </svg>
+
+        @for (row of layout().generations; track row.generation) {
+          <div class="gen-label" [style.top.px]="row.y - 20">
+            Generation {{ row.generation }}
+          </div>
+        }
+
+        @for (node of layout().nodes; track node.person.id) {
+          <div
+            class="node"
+            [style.left.px]="node.x"
+            [style.top.px]="node.y"
+            [style.width.px]="node.width"
+            [style.height.px]="node.height"
+          >
+            <app-person-card
+              [person]="node.person"
+              [tier]="node.tier"
+              [gmView]="isGmView()"
+              [selected]="selectedPersonId() === node.person.id"
+              [highlighted]="isHighlighted(node.person.id)"
+              [dimmed]="isDimmed(node.person.id)"
+              (select)="onSelect($event)"
+              (editPerson)="editPerson.emit($event)"
+              (openDossier)="openDossier.emit($event)"
+              (toggleVisibility)="onToggleVisibility($event)"
+              (toggleHideParentage)="onToggleHideParentage($event)"
+            />
+          </div>
+        }
+      </div>
     </div>
   }
+</div>
+
+<!-- Sits outside .tree-scroll so it overlays the viewport corner instead of panning/scaling with the canvas. -->
+<div class="zoom-controls" role="group" aria-label="Zoom controls">
+  <button type="button" class="zoom-btn" [disabled]="isAtMinZoom()" (click)="zoomOut()" aria-label="Zoom out">
+    −
+  </button>
+  <span class="zoom-level">{{ zoomPercent() }}%</span>
+  <button type="button" class="zoom-btn" [disabled]="isAtMaxZoom()" (click)="zoomIn()" aria-label="Zoom in">
+    +
+  </button>
+  <button type="button" class="zoom-btn zoom-reset" [disabled]="scale() === 1" (click)="resetZoom()">
+    Reset
+  </button>
 </div>

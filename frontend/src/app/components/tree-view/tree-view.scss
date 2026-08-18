@@ -1,17 +1,80 @@
 :host {
   display: block;
+  position: relative;
   height: 100%;
   min-height: 0;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius);
+  background-color: var(--bg-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-panel);
+}
+
+.zoom-btn {
+  min-width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(127, 127, 127, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.zoom-reset {
+  min-width: unset;
+  padding: 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.zoom-level {
+  min-width: 40px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  user-select: none;
 }
 
 .tree-scroll {
   height: 100%;
   overflow: auto;
   background-color: var(--bg);
+  cursor: grab;
+  touch-action: none;
+}
+
+.tree-scroll.is-dragging {
+  cursor: grabbing;
+}
+
+.tree-canvas-sizer {
+  position: relative;
 }
 
 .tree-canvas {
   position: relative;
+  transform-origin: 0 0;
 }
 
 .links {

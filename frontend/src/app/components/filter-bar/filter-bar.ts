@@ -34,8 +34,8 @@ export class FilterBar {
   readonly totalCount = this.treeData.count;
 
   readonly isFiltered = computed<boolean>(() => {
-    const { nation, house } = this.filter();
-    return nation !== null || house !== null;
+    const { nations, houses } = this.filter();
+    return nations.length > 0 || houses.length > 0;
   });
 
   /** House swatch on the chips, so the chart's colour coding is legible here too. */
@@ -43,12 +43,25 @@ export class FilterBar {
     return houseColor(house);
   }
 
-  onNationChange(value: string): void {
-    this.viewMode.setNation(value === '' ? null : value);
+  /**
+   * Plain click jumps (replaces the selection with just this nation, or clears
+   * everything for the "All" chip); Ctrl/Cmd-click toggles it into/out of the
+   * current selection instead, so several timelines can be viewed combined.
+   */
+  onNationClick(event: MouseEvent, nation: string | null): void {
+    if (nation !== null && (event.ctrlKey || event.metaKey)) {
+      this.viewMode.toggleNation(nation);
+    } else {
+      this.viewMode.jumpToNation(nation);
+    }
   }
 
-  onHouseChange(value: string): void {
-    this.viewMode.setHouse(value === '' ? null : value);
+  onHouseClick(event: MouseEvent, house: string | null): void {
+    if (house !== null && (event.ctrlKey || event.metaKey)) {
+      this.viewMode.toggleHouse(house);
+    } else {
+      this.viewMode.jumpToHouse(house);
+    }
   }
 
   onClear(): void {

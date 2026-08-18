@@ -5,7 +5,8 @@ import { GmDossier } from './components/gm-dossier/gm-dossier';
 import { PersonForm } from './components/person-form/person-form';
 import { TimelineView } from './components/timeline-view/timeline-view';
 import { TreeView } from './components/tree-view/tree-view';
-import { saveTextFile } from './services/file-export';
+import { downloadTextFile } from './services/file-export';
+import { SessionService } from './services/session.service';
 import { TimelineDataService } from './services/timeline-data.service';
 import { TreeDataService } from './services/tree-data.service';
 import { ViewModeService } from './services/view-mode.service';
@@ -13,6 +14,14 @@ import { ViewModeService } from './services/view-mode.service';
 /** `null` = closed; `{ id: null }` = adding; `{ id }` = editing that person. */
 interface FormTarget {
   id: string | null;
+}
+
+function postWorld(path: string, body: string, token: string): Promise<Response> {
+  return fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body,
+  });
 }
 
 /**
@@ -37,6 +46,7 @@ export class App {
   private readonly viewMode = inject(ViewModeService);
   private readonly treeData = inject(TreeDataService);
   private readonly timelineData = inject(TimelineDataService);
+  private readonly session = inject(SessionService);
 
   readonly EyeIcon = Eye;
   readonly EyeOffIcon = EyeOff;
@@ -45,20 +55,25 @@ export class App {
   readonly isPlayerPreview = this.viewMode.isPlayerPreview;
   readonly world = this.treeData.world;
 
-  /** "House {name} — Dynasty Ledger" when a house is in focus. */
+  /**
+   * "House {name} — Dynasty Ledger" when exactly one house is in focus.
+   * TODO(rework-event-dates plan, next step): with true multi-select, 2+
+   * houses selected together falls back to the unfiltered title below — how
+   * a combined selection should read is next step's call, not decided here.
+   */
   readonly ledgerTitle = computed<string>(() => {
-    const house = this.viewMode.filter().house;
-    return house === null ? 'Dynasty Ledger' : `House ${house} — Dynasty Ledger`;
+    const houses = this.viewMode.filter().houses;
+    return houses.length === 1 ? `House ${houses[0]} — Dynasty Ledger` : 'Dynasty Ledger';
   });
 
   /**
    * The eyebrow names the nation in focus, or a nation-count summary when
    * unfiltered — never the internal world/file id, which is not meant to be
-   * player- or GM-facing text.
+   * player- or GM-facing text. Same 2+-selected caveat as `ledgerTitle`.
    */
   readonly eyebrow = computed<string>(() => {
-    const nation = this.viewMode.filter().nation;
-    if (nation !== null) return `Kingdom of ${nation}`;
+    const selectedNations = this.viewMode.filter().nations;
+    if (selectedNations.length === 1) return `Kingdom of ${selectedNations[0]}`;
 
     const nations = this.treeData.nations();
     if (nations.length === 0) return '';
@@ -80,17 +95,19 @@ export class App {
     void this.timelineData.load();
   }
 
-  onSetMode(mode: 'gm' | 'player'): void {
+  async onSetMode(mode: 'gm' | 'player'): Promise<void> {
     // Leaving GM View must also tear down the GM-only panels.
     if (mode === 'player') {
       this.formTarget.set(null);
       this.dossierPersonId.set(null);
     }
-    this.viewMode.setMode(mode);
+    // Entering GM View may prompt for the password — setMode no-ops back to
+    // the current mode if that's declined, so nothing further to branch on.
+    await this.viewMode.setMode(mode);
   }
 
-  onToggleMode(): void {
-    this.onSetMode(this.isGmView() ? 'player' : 'gm');
+  async onToggleMode(): Promise<void> {
+    await this.onSetMode(this.isGmView() ? 'player' : 'gm');
   }
 
   onAddPerson(): void {
@@ -117,27 +134,48 @@ export class App {
   }
 
   async onSaveWorld(): Promise<void> {
-    const peopleOutcome = await saveTextFile(this.treeData.fileName(), this.treeData.serialize());
-    if (peopleOutcome === 'cancelled') {
-      this.statusMessage.set('Save cancelled.');
+    const token = this.session.token();
+    if (token === null) {
+      this.statusMessage.set('Sign in as GM (via the GM View toggle) to save.');
       return;
     }
-    const eventsOutcome = await saveTextFile(
-      this.timelineData.fileName(),
-      this.timelineData.serialize(),
-    );
 
-    this.statusMessage.set(
-      peopleOutcome === 'saved' && eventsOutcome === 'saved'
-        ? 'Saved to disk. Re-run "npm run sync-data" if you saved outside the repo data folder.'
-        : 'Downloaded — move the files over your repo data/ copies.',
-    );
+    const world = this.treeData.world();
+    try {
+      const [peopleRes, eventsRes] = await Promise.all([
+        postWorld(`/api/world/${encodeURIComponent(world)}`, this.treeData.serialize(), token),
+        postWorld(`/api/world/${encodeURIComponent(world)}/events`, this.timelineData.serialize(), token),
+      ]);
+
+      if (peopleRes.status === 401 || eventsRes.status === 401) {
+        this.session.clear();
+        this.statusMessage.set('Your GM session expired — sign in again to save.');
+        return;
+      }
+      if (!peopleRes.ok || !eventsRes.ok) {
+        throw new Error(`people ${peopleRes.status}, events ${eventsRes.status}`);
+      }
+
+      // _dirty on both services clears itself shortly, via the write's own
+      // broadcast looping back over this tab's live WebSocket — no need to
+      // set it here too.
+      this.statusMessage.set('Saved — live for everyone with the link.');
+    } catch (cause) {
+      this.statusMessage.set(cause instanceof Error ? `Save failed: ${cause.message}` : 'Save failed.');
+    }
   }
 
   async onRevert(): Promise<void> {
     await this.treeData.revert();
     await this.timelineData.revert();
-    this.statusMessage.set('Reverted to the files on disk.');
+    this.statusMessage.set('Reverted to the last saved version.');
+  }
+
+  /** A local snapshot, independent of the live store — disaster-recovery copy, not the save path. */
+  onExportBackup(): void {
+    downloadTextFile(this.treeData.fileName(), this.treeData.serialize());
+    downloadTextFile(this.timelineData.fileName(), this.timelineData.serialize());
+    this.statusMessage.set('Downloaded a local backup of the current people and events.');
   }
 
   onDismissStatus(): void {

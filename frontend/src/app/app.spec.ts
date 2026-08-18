@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
+import { SessionService } from './services/session.service';
 import { ViewModeService } from './services/view-mode.service';
 
 /**
@@ -86,7 +87,9 @@ function stubFetch(): void {
     'fetch',
     vi.fn(async (input: unknown) => {
       const url = String(input);
-      const body = url.includes('-events') ? worldEvents : worldPeople;
+      // Matches the live API paths (/api/world/:world and /api/world/:world/events),
+      // not the old data/{world}[-events].json static files.
+      const body = url.endsWith('/events') ? worldEvents : worldPeople;
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -100,8 +103,12 @@ async function createApp() {
   // These tests are written assuming a GM-View starting point (the app's own
   // default is 'player', for a safe bare link — see ViewModeService). Force
   // 'gm' here so the fixture's baseline matches what each test expects before
-  // any toggleMode() calls.
-  TestBed.inject(ViewModeService).setMode('gm');
+  // any toggleMode() calls. Entering GM View now requires an authenticated
+  // session (see ViewModeService.setMode), so seed one directly rather than
+  // going through the real password-prompt/fetch('/api/auth') flow — this
+  // exercises the legitimate "already authenticated" path, not a backdoor.
+  TestBed.inject(SessionService).setToken('test-session-token');
+  await TestBed.inject(ViewModeService).setMode('gm');
   await fixture.whenStable();
   fixture.detectChanges();
   await fixture.whenStable();

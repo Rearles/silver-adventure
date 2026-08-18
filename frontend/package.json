@@ -9,7 +9,8 @@
     "prebuild": "npm run sync-data",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:worker": "cd worker && vitest run"
   },
   "private": true,
   "packageManager": "npm@10.9.7",
@@ -28,9 +29,11 @@
     "@angular/build": "^21.2.21",
     "@angular/cli": "^21.2.21",
     "@angular/compiler-cli": "^21.2.0",
+    "@cloudflare/workers-types": "^5.20260818.1",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "wrangler": "^4.123.0"
   }
 }

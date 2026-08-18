@@ -1,12 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Eye, EyeOff, LucideAngularModule, Trash2, type LucideIconData } from 'lucide-angular';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  type AbstractControl,
+  type ValidationErrors,
+} from '@angular/forms';
+import { Eye, EyeOff, LucideAngularModule, Pencil, Trash2, type LucideIconData } from 'lucide-angular';
 import {
   DYNASTY_EVENT_TYPES,
   type DynastyEvent,
   type DynastyEventType,
 } from '../../models/dynasty-event';
 import type { Visibility } from '../../models/person';
+import { collectHouses } from '../../models/projection';
 import { TimelineDataService } from '../../services/timeline-data.service';
 import { TreeDataService } from '../../services/tree-data.service';
 import { ViewModeService } from '../../services/view-mode.service';
@@ -15,6 +22,28 @@ import { eventColor, eventIcon } from './event-visuals';
 interface EraGroup {
   era: string;
   events: DynastyEvent[];
+}
+
+/** Collapses a (possibly partial) day/month/year into a single comparable number. Mirrors PersonForm's helper of the same name. */
+function toComparable(year: number | null, month: number | null, day: number | null): number | null {
+  if (year === null) return null;
+  return year * 10000 + (month ?? 1) * 100 + (day ?? 1);
+}
+
+/** End cannot precede start. Reported on the group, not a single field — mirrors PersonForm's `chronologyValidator`. */
+function chronologyValidator(group: AbstractControl): ValidationErrors | null {
+  const start = toComparable(
+    group.get('startYear')?.value as number | null,
+    group.get('startMonth')?.value as number | null,
+    group.get('startDay')?.value as number | null,
+  );
+  const end = toComparable(
+    group.get('endYear')?.value as number | null,
+    group.get('endMonth')?.value as number | null,
+    group.get('endDay')?.value as number | null,
+  );
+  if (start === null || end === null) return null;
+  return end < start ? { chronology: true } : null;
 }
 
 /**
@@ -44,6 +73,7 @@ export class TimelineView {
   readonly EyeIcon = Eye;
   readonly EyeOffIcon = EyeOff;
   readonly TrashIcon = Trash2;
+  readonly EditIcon = Pencil;
 
   iconFor(type: DynastyEventType): LucideIconData {
     return eventIcon(type);
@@ -66,17 +96,71 @@ export class TimelineView {
   readonly error = this.timelineData.error;
 
   readonly showAddForm = signal<boolean>(false);
+  /** `null` while the open form is adding a new event; the event's id while editing an existing one. */
+  readonly editingEventId = signal<string | null>(null);
+  /** "Save changes" when editing, "Add event" when creating — same form, same submit handler either way. */
+  readonly submitLabel = computed<string>(() => (this.editingEventId() === null ? 'Add event' : 'Save changes'));
+  readonly formHeading = computed<string>(() => (this.editingEventId() === null ? 'New event' : 'Edit event'));
 
-  readonly addForm = this.formBuilder.nonNullable.group({
-    title: ['', [Validators.required]],
-    type: ['other' as DynastyEventType],
-    year: [1500, [Validators.required]],
-    era: [''],
-    description: [''],
-    nation: [''],
-    house: [''],
-    visibility: ['known' as Visibility],
+  /** Held as a signal rather than a form control, mirroring PersonForm's parent/spouse pickers — a search-and-pick chip list. */
+  readonly relatedPersonIds = signal<string[]>([]);
+  readonly personSearch = signal<string>('');
+
+  readonly personResults = computed(() => {
+    const chosen = new Set(this.relatedPersonIds());
+    return this.treeData
+      .searchByName(this.personSearch())
+      .filter((candidate) => !chosen.has(candidate.id))
+      .slice(0, 8);
   });
+
+  /**
+   * Nation/house timeline tags, same signal-not-form-control pattern as
+   * `relatedPersonIds` above. Deliberately unscoped by the tree's current
+   * nation/house filter (unlike `TreeDataService.houses`) — tagging an event
+   * shouldn't be limited to whatever the GM happens to have the tree filtered
+   * to right now.
+   */
+  readonly eventNations = signal<string[]>([]);
+  readonly eventHouses = signal<string[]>([]);
+  readonly nationTagSearch = signal<string>('');
+  readonly houseTagSearch = signal<string>('');
+
+  private readonly allHouses = computed<string[]>(() => collectHouses(this.treeData.gmPeople(), null));
+
+  readonly nationTagResults = computed(() => {
+    const chosen = new Set(this.eventNations());
+    const term = this.nationTagSearch().trim().toLowerCase();
+    return this.treeData
+      .nations()
+      .filter((nation) => !chosen.has(nation) && (term === '' || nation.toLowerCase().includes(term)))
+      .slice(0, 8);
+  });
+
+  readonly houseTagResults = computed(() => {
+    const chosen = new Set(this.eventHouses());
+    const term = this.houseTagSearch().trim().toLowerCase();
+    return this.allHouses()
+      .filter((house) => !chosen.has(house) && (term === '' || house.toLowerCase().includes(term)))
+      .slice(0, 8);
+  });
+
+  readonly addForm = this.formBuilder.nonNullable.group(
+    {
+      title: ['', [Validators.required]],
+      type: ['other' as DynastyEventType],
+      startDay: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(31)]),
+      startMonth: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(12)]),
+      startYear: [1500, [Validators.required]],
+      endDay: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(31)]),
+      endMonth: this.formBuilder.control<number | null>(null, [Validators.min(1), Validators.max(12)]),
+      endYear: this.formBuilder.control<number | null>(null),
+      era: [''],
+      description: [''],
+      visibility: ['known' as Visibility],
+    },
+    { validators: chronologyValidator },
+  );
 
   /** Contiguous runs of the same era, so the spine gets readable section heads. */
   readonly grouped = computed<EraGroup[]>(() => {
@@ -100,6 +184,11 @@ export class TimelineView {
 
   nameFor(personId: string): string {
     return this.treeData.nameFor(personId);
+  }
+
+  /** "1780" alone, or "1780–1785" when the event has an end year — mirrors PersonCard's birth–death formatting. */
+  formatEventYears(event: DynastyEvent): string {
+    return event.endYear === undefined ? `${event.startYear}` : `${event.startYear}–${event.endYear}`;
   }
 
   /** Clicking the selected event again clears the tree highlight. */
@@ -139,44 +228,140 @@ export class TimelineView {
     this.timelineData.deleteEvent(event.id);
   }
 
+  addRelatedPerson(id: string): void {
+    this.relatedPersonIds.update((current) => [...current, id]);
+    this.personSearch.set('');
+  }
+
+  removeRelatedPerson(id: string): void {
+    this.relatedPersonIds.update((current) => current.filter((personId) => personId !== id));
+  }
+
+  addNationTag(nation: string): void {
+    this.eventNations.update((current) => [...current, nation]);
+    this.nationTagSearch.set('');
+  }
+
+  removeNationTag(nation: string): void {
+    this.eventNations.update((current) => current.filter((n) => n !== nation));
+  }
+
+  addHouseTag(house: string): void {
+    this.eventHouses.update((current) => [...current, house]);
+    this.houseTagSearch.set('');
+  }
+
+  removeHouseTag(house: string): void {
+    this.eventHouses.update((current) => current.filter((h) => h !== house));
+  }
+
   onToggleAddForm(): void {
     this.showAddForm.update((open) => !open);
     if (this.showAddForm()) {
+      this.editingEventId.set(null);
       const selected = this.selectedPersonId();
+      const selectedPerson = selected === null ? undefined : this.treeData.personById(selected);
+      // Pre-seeded with the tree-selected person, if any — still just a starting
+      // point, not a requirement; the pickers below can add or remove freely.
+      this.relatedPersonIds.set(selected === null ? [] : [selected]);
+      this.personSearch.set('');
+      this.eventNations.set(selectedPerson === undefined ? [] : [selectedPerson.nation]);
+      this.eventHouses.set(selectedPerson === undefined ? [] : [selectedPerson.house]);
+      this.nationTagSearch.set('');
+      this.houseTagSearch.set('');
       this.addForm.reset({
         title: '',
         type: 'other',
-        year: this.yearBounds()?.max ?? 1500,
+        startDay: null,
+        startMonth: null,
+        startYear: this.yearBounds()?.max ?? 1500,
+        endDay: null,
+        endMonth: null,
+        endYear: null,
         era: '',
         description: '',
-        nation: selected === null ? '' : (this.treeData.personById(selected)?.nation ?? ''),
-        house: selected === null ? '' : (this.treeData.personById(selected)?.house ?? ''),
         visibility: 'known',
       });
     }
   }
 
-  /** A new event is linked to the currently selected person, if there is one. */
-  onAddEvent(): void {
+  /** Opens the same form pre-filled from an existing event, for `onSubmitEvent` to update instead of create. */
+  onEditEvent(event: DynastyEvent): void {
+    this.editingEventId.set(event.id);
+    this.relatedPersonIds.set([...event.relatedPersonIds]);
+    this.personSearch.set('');
+    this.eventNations.set([...event.nations]);
+    this.eventHouses.set([...event.houses]);
+    this.nationTagSearch.set('');
+    this.houseTagSearch.set('');
+    this.addForm.reset({
+      title: event.title,
+      type: event.type,
+      startDay: event.startDay ?? null,
+      startMonth: event.startMonth ?? null,
+      startYear: event.startYear,
+      endDay: event.endDay ?? null,
+      endMonth: event.endMonth ?? null,
+      endYear: event.endYear ?? null,
+      era: event.era ?? '',
+      description: event.description ?? '',
+      visibility: event.visibility,
+    });
+    this.showAddForm.set(true);
+  }
+
+  /** Creates a new event, or updates the one being edited — same form, same validation, same draft shape either way. */
+  onSubmitEvent(): void {
     if (this.addForm.invalid) {
       this.addForm.markAllAsTouched();
       return;
     }
     const value = this.addForm.getRawValue();
-    const selected = this.selectedPersonId();
 
-    this.timelineData.addEvent({
+    // Day/month are precision on top of a year; without a year they are
+    // meaningless — mirrors PersonForm's birth/death handling. startYear is
+    // always present (required), so start day/month always apply when set.
+    // Optional fields are set to `undefined` rather than omitted: updateEvent
+    // merges the draft onto the existing event, so an *omitted* key would
+    // silently leave a stale value in place instead of clearing it.
+    const endDay = value.endYear !== null ? value.endDay : null;
+    const endMonth = value.endYear !== null ? value.endMonth : null;
+
+    const draft: Omit<DynastyEvent, 'id'> = {
       title: value.title.trim(),
       type: value.type,
-      year: value.year,
-      relatedPersonIds: selected === null ? [] : [selected],
+      startYear: value.startYear,
+      startMonth: value.startMonth ?? undefined,
+      startDay: value.startDay ?? undefined,
+      endYear: value.endYear ?? undefined,
+      endMonth: endMonth ?? undefined,
+      endDay: endDay ?? undefined,
+      nations: this.eventNations(),
+      houses: this.eventHouses(),
+      relatedPersonIds: this.relatedPersonIds(),
       visibility: value.visibility,
-      ...(value.era.trim() !== '' ? { era: value.era.trim() } : {}),
-      ...(value.description.trim() !== '' ? { description: value.description.trim() } : {}),
-      ...(value.nation.trim() !== '' ? { nation: value.nation.trim() } : {}),
-      ...(value.house.trim() !== '' ? { house: value.house.trim() } : {}),
-    });
+      era: value.era.trim() !== '' ? value.era.trim() : undefined,
+      description: value.description.trim() !== '' ? value.description.trim() : undefined,
+    };
 
+    const editingId = this.editingEventId();
+    if (editingId === null) {
+      this.timelineData.addEvent(draft);
+    } else {
+      this.timelineData.updateEvent(editingId, draft);
+    }
+
+    this.closeAddForm();
+  }
+
+  private closeAddForm(): void {
     this.showAddForm.set(false);
+    this.editingEventId.set(null);
+    this.relatedPersonIds.set([]);
+    this.personSearch.set('');
+    this.eventNations.set([]);
+    this.eventHouses.set([]);
+    this.nationTagSearch.set('');
+    this.houseTagSearch.set('');
   }
 }

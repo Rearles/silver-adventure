@@ -3,7 +3,7 @@ title: "Add a child picker to the person form and let all relationship pickers c
 type: "feature"
 created: "2026-08-17"
 status: not-started
-related: ["add-cloudflare-worker-live-persistence-and-gm-auth_aaa6a5ac.plan.md"]
+related: ["add-cloudflare-worker-live-persistence-and-gm-auth_aaa6a5ac.plan.md", "add-drag-to-pan-and-zoom-to-the-family-tree_01750ef3.plan.md", "rework-event-dates-and-multi-timeline-linking_5a23573c.plan.md"]
 ---
 
 # Add inline person creation for parent/child/spouse relationships

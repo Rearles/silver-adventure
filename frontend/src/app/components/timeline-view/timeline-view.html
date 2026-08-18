@@ -58,25 +58,102 @@
   }
 
   @if (isGmView() && showAddForm()) {
-    <form class="add-form" [formGroup]="addForm" (ngSubmit)="onAddEvent()">
+    <form class="add-form" [formGroup]="addForm" (ngSubmit)="onSubmitEvent()">
+      <h3>{{ formHeading() }}</h3>
       <div class="field">
         <label for="tl-title">Title *</label>
         <input id="tl-title" formControlName="title" />
       </div>
+      <div class="field">
+        <label for="tl-type">Type</label>
+        <select id="tl-type" formControlName="type">
+          @for (type of eventTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </div>
       <div class="add-row">
         <div class="field">
-          <label for="tl-type">Type</label>
-          <select id="tl-type" formControlName="type">
-            @for (type of eventTypes; track type) {
-              <option [value]="type">{{ type }}</option>
-            }
-          </select>
+          <label for="tl-start-day">Start *</label>
+          <div class="date-parts">
+            <input
+              id="tl-start-day"
+              class="date-day"
+              type="number"
+              formControlName="startDay"
+              placeholder="DD"
+              aria-label="Start day"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-start-month"
+              class="date-month"
+              type="number"
+              formControlName="startMonth"
+              placeholder="MM"
+              aria-label="Start month"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-start-year"
+              class="date-year"
+              type="number"
+              formControlName="startYear"
+              placeholder="YYYY"
+              aria-label="Start year"
+            />
+          </div>
+          @if (addForm.controls.startYear.touched && addForm.controls.startYear.invalid) {
+            <span class="error-text">A start year is required.</span>
+          }
+          @if (addForm.controls.startDay.touched && addForm.controls.startDay.invalid) {
+            <span class="error-text">Day must be between 1 and 31.</span>
+          }
+          @if (addForm.controls.startMonth.touched && addForm.controls.startMonth.invalid) {
+            <span class="error-text">Month must be between 1 and 12.</span>
+          }
         </div>
         <div class="field">
-          <label for="tl-year">Year *</label>
-          <input id="tl-year" type="number" formControlName="year" />
+          <label for="tl-end-day">End</label>
+          <div class="date-parts">
+            <input
+              id="tl-end-day"
+              class="date-day"
+              type="number"
+              formControlName="endDay"
+              placeholder="DD"
+              aria-label="End day"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-end-month"
+              class="date-month"
+              type="number"
+              formControlName="endMonth"
+              placeholder="MM"
+              aria-label="End month"
+            />
+            <span class="date-sep">/</span>
+            <input
+              id="tl-end-year"
+              class="date-year"
+              type="number"
+              formControlName="endYear"
+              placeholder="YYYY"
+              aria-label="End year"
+            />
+          </div>
+          @if (addForm.controls.endDay.touched && addForm.controls.endDay.invalid) {
+            <span class="error-text">Day must be between 1 and 31.</span>
+          }
+          @if (addForm.controls.endMonth.touched && addForm.controls.endMonth.invalid) {
+            <span class="error-text">Month must be between 1 and 12.</span>
+          }
         </div>
       </div>
+      @if (addForm.errors?.['chronology']) {
+        <p class="error-text">End date cannot precede start date.</p>
+      }
       <div class="add-row">
         <div class="field">
           <label for="tl-era">Era</label>
@@ -90,26 +167,115 @@
           </select>
         </div>
       </div>
-      <div class="add-row">
-        <div class="field">
-          <label for="tl-nation">Nation</label>
-          <input id="tl-nation" formControlName="nation" />
-        </div>
-        <div class="field">
-          <label for="tl-house">House</label>
-          <input id="tl-house" formControlName="house" />
-        </div>
-      </div>
       <div class="field">
         <label for="tl-desc">Description</label>
         <textarea id="tl-desc" formControlName="description"></textarea>
       </div>
-      @if (selectedPersonName(); as personName) {
-        <p class="add-hint">Will be linked to {{ personName }}.</p>
-      } @else {
-        <p class="add-hint">Select a person in the tree first to link this event to them.</p>
-      }
-      <button type="submit" class="btn btn-primary">Add event</button>
+
+      <!-- ── Nation/house timeline tags ─────────────────────────────────── -->
+      <div class="add-row">
+        <div class="field">
+          <label for="tl-nation-search">Nation timelines</label>
+          <div class="chips">
+            @for (nation of eventNations(); track nation) {
+              <span class="chip">
+                {{ nation }}
+                <button type="button" (click)="removeNationTag(nation)" aria-label="Remove nation">✕</button>
+              </span>
+            }
+            @if (eventNations().length === 0) {
+              <span class="chips-empty">Not tagged to a nation</span>
+            }
+          </div>
+          <input
+            id="tl-nation-search"
+            [value]="nationTagSearch()"
+            (input)="nationTagSearch.set($any($event.target).value)"
+            placeholder="+ add a nation timeline…"
+            autocomplete="off"
+          />
+          @if (nationTagSearch() !== '' && nationTagResults().length > 0) {
+            <ul class="results">
+              @for (nation of nationTagResults(); track nation) {
+                <li>
+                  <button type="button" (click)="addNationTag(nation)">
+                    <span class="r-name">{{ nation }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        <div class="field">
+          <label for="tl-house-search">House timelines</label>
+          <div class="chips">
+            @for (house of eventHouses(); track house) {
+              <span class="chip">
+                {{ house }}
+                <button type="button" (click)="removeHouseTag(house)" aria-label="Remove house">✕</button>
+              </span>
+            }
+            @if (eventHouses().length === 0) {
+              <span class="chips-empty">Not tagged to a house</span>
+            }
+          </div>
+          <input
+            id="tl-house-search"
+            [value]="houseTagSearch()"
+            (input)="houseTagSearch.set($any($event.target).value)"
+            placeholder="+ add a house timeline…"
+            autocomplete="off"
+          />
+          @if (houseTagSearch() !== '' && houseTagResults().length > 0) {
+            <ul class="results">
+              @for (house of houseTagResults(); track house) {
+                <li>
+                  <button type="button" (click)="addHouseTag(house)">
+                    <span class="r-name">{{ house }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+
+      <!-- ── People picker ──────────────────────────────────────────────── -->
+      <div class="field">
+        <label for="tl-person-search">People involved</label>
+        <div class="chips">
+          @for (id of relatedPersonIds(); track id) {
+            <span class="chip">
+              {{ nameFor(id) }}
+              <button type="button" (click)="removeRelatedPerson(id)" aria-label="Remove person">✕</button>
+            </span>
+          }
+          @if (relatedPersonIds().length === 0) {
+            <span class="chips-empty">No one linked yet</span>
+          }
+        </div>
+        <input
+          id="tl-person-search"
+          [value]="personSearch()"
+          (input)="personSearch.set($any($event.target).value)"
+          placeholder="Search people by name or house…"
+          autocomplete="off"
+        />
+        @if (personSearch() !== '' && personResults().length > 0) {
+          <ul class="results">
+            @for (candidate of personResults(); track candidate.id) {
+              <li>
+                <button type="button" (click)="addRelatedPerson(candidate.id)">
+                  <span class="r-name">{{ candidate.name }}</span>
+                  <span class="r-meta">{{ candidate.house }} · gen {{ candidate.generation }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
     </form>
   }
 
@@ -146,7 +312,7 @@
                 </span>
                 <span class="body">
                   <span class="year">
-                    {{ event.year }}
+                    {{ formatEventYears(event) }}
                     @if (isGmView() && event.visibility === 'hidden') {
                       <span class="hidden-flag">· hidden from players</span>
                     }
@@ -167,6 +333,14 @@
 
               @if (isGmView()) {
                 <div class="event-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    title="Edit event"
+                    (click)="onEditEvent(event)"
+                  >
+                    <lucide-icon [img]="EditIcon" [size]="13" />
+                  </button>
                   <button
                     type="button"
                     class="icon-btn"

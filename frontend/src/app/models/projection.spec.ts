@@ -28,8 +28,10 @@ function event(overrides: Partial<DynastyEvent> & Pick<DynastyEvent, 'id'>): Dyn
   return {
     title: overrides.id,
     type: 'other',
-    year: 1400,
+    startYear: 1400,
     relatedPersonIds: [],
+    nations: [],
+    houses: [],
     visibility: 'known',
     ...overrides,
   };
@@ -187,14 +189,14 @@ describe('applyOverlapFilter', () => {
   ];
 
   it('treats everyone as core when no filter is set', () => {
-    const filtered = applyOverlapFilter(pool, { nation: null, house: null });
+    const filtered = applyOverlapFilter(pool, { nations: [], houses: [] });
 
     expect(filtered).toHaveLength(4);
     expect(filtered.every((entry) => entry.tier === 'core')).toBe(true);
   });
 
   it('pulls in an in-married spouse from another house as adjacent, not excluded', () => {
-    const filtered = applyOverlapFilter(pool, { nation: null, house: 'Valcrest' });
+    const filtered = applyOverlapFilter(pool, { nations: [], houses: ['Valcrest'] });
     const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
 
     expect(tiers.get('king')).toBe('core');
@@ -204,7 +206,7 @@ describe('applyOverlapFilter', () => {
   });
 
   it('excludes people with no connection to the filtered set', () => {
-    const filtered = applyOverlapFilter(pool, { nation: null, house: 'Valcrest' });
+    const filtered = applyOverlapFilter(pool, { nations: [], houses: ['Valcrest'] });
 
     expect(filtered.map((entry) => entry.person.id)).not.toContain('stranger');
   });
@@ -215,7 +217,7 @@ describe('applyOverlapFilter', () => {
         person({ id: 'core', house: 'Valcrest' }),
         person({ id: 'outsiderChild', house: 'Ashfell', parentIds: ['core'], generation: 1 }),
       ],
-      { nation: null, house: 'Valcrest' },
+      { nations: [], houses: ['Valcrest'] },
     );
     const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
 
@@ -223,13 +225,31 @@ describe('applyOverlapFilter', () => {
   });
 
   it('applies nation and house together', () => {
-    const filtered = applyOverlapFilter(pool, { nation: 'Meruvia', house: 'Doryne' });
+    const filtered = applyOverlapFilter(pool, { nations: ['Meruvia'], houses: ['Doryne'] });
     const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
 
     expect(tiers.get('consort')).toBe('core');
     // Reached through the marriage and the child link respectively.
     expect(tiers.get('king')).toBe('adjacent');
     expect(tiers.get('heir')).toBe('adjacent');
+  });
+
+  it('combines nations and houses as a union — matching either is enough, not both', () => {
+    // Two people connected to nothing else, each qualifying on a different
+    // dimension: this is the exact shape the old AND-semantics could never
+    // produce as core (neither matches BOTH the selected nation and house).
+    const combined = [
+      person({ id: 'ashaNoble', nation: 'Asha', house: 'Unrelated' }),
+      person({ id: 'sparrowCommoner', nation: 'Elsewhere', house: 'Sparrow' }),
+      person({ id: 'outsider', nation: 'Elsewhere', house: 'Unrelated' }),
+    ];
+
+    const filtered = applyOverlapFilter(combined, { nations: ['Asha'], houses: ['Sparrow'] });
+    const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
+
+    expect(tiers.get('ashaNoble')).toBe('core');
+    expect(tiers.get('sparrowCommoner')).toBe('core');
+    expect(tiers.has('outsider')).toBe(false);
   });
 
   it('does not reach through a parent edge the player projection has removed', () => {
@@ -244,7 +264,7 @@ describe('applyOverlapFilter', () => {
         generation: 1,
       }),
     ]);
-    const filtered = applyOverlapFilter(projected, { nation: null, house: 'Valcrest' });
+    const filtered = applyOverlapFilter(projected, { nations: [], houses: ['Valcrest'] });
 
     expect(filtered.map((entry) => entry.person.id)).toEqual(['king']);
   });

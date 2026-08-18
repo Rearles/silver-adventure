@@ -11,12 +11,13 @@ export const DEFAULT_WORLD = 'world';
  * Loads, edits, and saves one world's people, and derives the player-facing
  * projection.
  *
- * The canonical store is `data/{world}.json` at the repo root (served to the app
- * as `/data/...` — see the assets mapping in `angular.json`). The browser cannot
- * write back to that path on its own, so edits live in memory, are mirrored to
- * `localStorage` so a refresh does not lose work, and are written back to disk
- * either through the File System Access API or as a download you drop over the
- * original file.
+ * The canonical store is the Worker's `/api/world/{world}` endpoint (R2 behind
+ * it — see frontend/worker/index.ts), not git. In-progress edits still live in
+ * memory and are mirrored to `localStorage` so an accidental refresh before
+ * Save doesn't lose work — that safety net is unchanged. What's new: after a
+ * load, an `/api/world/{world}/live` WebSocket stays open and applies pushes
+ * from the server (the GM's own saves, broadcast back) directly to `_people`,
+ * so open tabs — including players' — update without a manual reload.
  */
 @Injectable({ providedIn: 'root' })
 export class TreeDataService {
@@ -57,43 +58,57 @@ export class TreeDataService {
   );
 
   readonly nations = computed<string[]>(() => collectNations(this.displayPeople()));
-  readonly houses = computed<string[]>(() =>
-    collectHouses(this.displayPeople(), this.viewMode.filter().nation),
-  );
+  /**
+   * Scoped to the selected nation only when exactly one is selected —
+   * `collectHouses` takes a single nation-or-null, so 0 or 2+ selected
+   * nations both fall back to listing every house (unscoped).
+   */
+  readonly houses = computed<string[]>(() => {
+    const selectedNations = this.viewMode.filter().nations;
+    const nation = selectedNations.length === 1 ? selectedNations[0] : null;
+    return collectHouses(this.displayPeople(), nation);
+  });
 
   readonly count = computed<number>(() => this.displayPeople().length);
   readonly hiddenCount = computed<number>(
     () => this._people().filter((person) => person.visibility === 'hidden').length,
   );
 
+  private socket: WebSocket | null = null;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
   // ── Loading & persistence ─────────────────────────────────────────────────
 
   /**
-   * Loads a world. A `localStorage` draft wins over the file on disk unless
-   * `discardLocalEdits` is set, so an accidental refresh is not destructive.
+   * Loads a world from the live API. A `localStorage` draft wins over the
+   * server's copy unless `discardLocalEdits` is set, so an accidental refresh
+   * mid-edit is not destructive — same safety net as before, just compared
+   * against the live API's response instead of a static file. Either path
+   * ends by (re)connecting the live-update WebSocket for this world.
    */
   async load(world: string = DEFAULT_WORLD, discardLocalEdits = false): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
     this._world.set(world);
 
-    try {
-      if (!discardLocalEdits) {
-        const draft = this.readDraft(world);
-        if (draft !== null) {
-          this._people.set(draft);
-          this._dirty.set(true);
-          return;
-        }
-      }
+    const draft = discardLocalEdits ? null : this.readDraft(world);
+    if (draft !== null) {
+      this._people.set(draft);
+      this._dirty.set(true);
+      this._loading.set(false);
+      this.connectLive(world);
+      return;
+    }
 
-      const response = await fetch(`data/${world}.json`, { cache: 'no-store' });
+    try {
+      const response = await fetch(`/api/world/${encodeURIComponent(world)}`, { cache: 'no-store' });
       if (!response.ok) {
-        throw new Error(`data/${world}.json responded ${response.status}`);
+        throw new Error(`/api/world/${world} responded ${response.status}`);
       }
       const parsed = (await response.json()) as WorldPeopleFile;
       if (!Array.isArray(parsed.people)) {
-        throw new Error(`data/${world}.json has no "people" array`);
+        throw new Error(`/api/world/${world} has no "people" array`);
       }
       this._people.set(normalizePool(parsed.people));
       this._dirty.set(false);
@@ -102,6 +117,73 @@ export class TreeDataService {
       this._error.set(cause instanceof Error ? cause.message : String(cause));
     } finally {
       this._loading.set(false);
+    }
+
+    this.connectLive(world);
+  }
+
+  /**
+   * Opens (or re-opens) the live-update socket for `world`. Same-origin —
+   * the Worker serves both the app and `/api/*`, so no CORS/proxy config is
+   * needed in production. Reconnects on close with capped exponential
+   * backoff, so a dropped wifi/sleeping laptop recovers on its own.
+   */
+  private connectLive(world: string): void {
+    // Test environments (jsdom) don't implement WebSocket at all; a plain
+    // static-file dev server for `ng serve` without the Worker running has
+    // nothing at this path either. Either way, degrade to "no live updates"
+    // rather than let a construction failure break the load() that already
+    // succeeded.
+    if (typeof WebSocket === 'undefined') return;
+
+    this.socket?.close();
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    let socket: WebSocket;
+    try {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      socket = new WebSocket(`${proto}://${location.host}/api/world/${encodeURIComponent(world)}/live`);
+    } catch {
+      return;
+    }
+    this.socket = socket;
+
+    socket.addEventListener('open', () => {
+      this.reconnectAttempt = 0;
+    });
+    socket.addEventListener('message', (event) => {
+      this.applyLivePush(String(event.data));
+    });
+    socket.addEventListener('close', () => {
+      if (this.socket !== socket) return; // superseded by a newer connection
+      this.scheduleReconnect(world);
+    });
+    socket.addEventListener('error', () => {
+      socket.close();
+    });
+  }
+
+  private scheduleReconnect(world: string): void {
+    const delayMs = Math.min(30_000, 1_000 * 2 ** this.reconnectAttempt);
+    this.reconnectAttempt += 1;
+    this.reconnectTimer = setTimeout(() => this.connectLive(world), delayMs);
+  }
+
+  /** A push carries the *saved* state (this GM's own write, broadcast back) — never treated as a local draft. */
+  private applyLivePush(raw: string): void {
+    try {
+      const message = JSON.parse(raw) as { kind?: string; payload?: string };
+      if (message.kind !== 'people' || typeof message.payload !== 'string') return; // 'events' is TimelineDataService's concern
+      const parsed = JSON.parse(message.payload) as WorldPeopleFile;
+      if (!Array.isArray(parsed.people)) return;
+      this._people.set(normalizePool(parsed.people));
+      this._dirty.set(false);
+    } catch {
+      // A malformed push isn't worth surfacing as a hard error — the next
+      // successful push, or a manual reload, corrects the view.
     }
   }
 

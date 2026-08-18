@@ -1,21 +1,28 @@
 # Dynasty Tracker
 
-A local, single-user tool for running the royal families and noble houses of a
-tabletop RPG setting. It draws a growing family tree from plain JSON — no manual
-node-dragging — and separates what you know as GM from what your players get to see.
+A GM tool for running the royal families and noble houses of a tabletop RPG
+setting — deployed as a live site (Cloudflare Workers) you hand your players a
+link to. It draws a growing family tree from JSON — no manual node-dragging —
+and separates what you know as GM from what your players get to see.
 
 ```
 silver-adventure/
-├── data/                 # Canonical world files (JSON). The single source of truth.
+├── data/                 # Seed / local-backup copies of world JSON. NOT the live store.
 │   ├── world.json           # People — starts empty
 │   └── world-events.json    # Events — starts empty
-├── frontend/             # Angular 21 app (the tree, timeline, GM dossiers)
-└── tools/                # C# console tool (CSV import, validation, bulk edits)
+├── frontend/
+│   ├── src/app/             # Angular 21 app (the tree, timeline, GM dossiers)
+│   └── worker/               # Cloudflare Worker API (auth, R2 read/write, live WebSocket push)
+└── tools/                # C# console tool (CSV import, validation, bulk edits) — local, git-file only
 ```
 
-`data/world.json` and `data/world-events.json` start empty — `{ "people": [] }` and
-`{ "events": [] }`. Add your own people and events through the app's `+ Person` /
-`+ Event` buttons, or bulk-import a spreadsheet with the C# tool (see
+The live store is Cloudflare R2, behind the Worker's `/api/world/{world}` API — see
+"Live architecture" below. `data/*.json` is a one-time seed and a local
+backup/import target (see "Adding a whole new world" and "Editing: app or tool?"),
+not something the deployed app reads or writes directly. `data/world.json` and
+`data/world-events.json` start empty — `{ "people": [] }` and `{ "events": [] }`.
+Add your own people and events through the app's `+ Person` / `+ Event` buttons
+(GM View), or bulk-import a spreadsheet with the C# tool (see
 [`tools/README.md`](tools/README.md)).
 
 ## Quick start
@@ -28,8 +35,10 @@ npm install
 npm start          # http://localhost:4200
 ```
 
-`npm start` mirrors `data/*.json` into `frontend/public/data/` first, so the app
-always serves the canonical files. Run `npm test` for the test suite.
+`npm start` still mirrors `data/*.json` into `frontend/public/data/` first — a
+leftover convenience for local reference and the C# tool, **not** something the
+running app fetches anymore (see "Live architecture"). Run `npm test` for the
+test suite.
 
 **The tool** (needs the .NET 8 SDK):
 
@@ -39,19 +48,47 @@ dotnet build
 dotnet run --project src/DynastyTools -- validate --world ../data/world.json
 ```
 
+## Live architecture
+
+The deployed site is one Cloudflare Workers project (`frontend/wrangler.jsonc`,
+project "age-of-aether-campaign") serving both the built Angular app (static
+assets) and the API (`frontend/worker/`), same origin:
+
+| Piece | What it does |
+|---|---|
+| **R2** (`age-of-aether-world-data` bucket) | Durable store — the actual `{ people: [...] }` / `{ events: [...] }` JSON, one object per world per dataset |
+| **Worker** (`frontend/worker/index.ts`) | `GET /api/world/:world[/events]` (public read), `POST /api/auth` (password → session token), `POST /api/world/:world[/events]` (authenticated write) |
+| **Durable Object** (`WorldRoom`, `frontend/worker/world-room.ts`) | One per world. Relays a broadcast over WebSocket (`/api/world/:world/live`) to every open tab after a write — this is what makes a GM's save show up for players without a reload |
+
+**GM auth:** `GM_PASSWORD` and `SESSION_SECRET` are Worker secrets
+(`wrangler secret put`), never in this repo. Entering GM View prompts for the
+password and exchanges it for a signed session token
+(`frontend/worker/auth.ts`); the Worker independently re-verifies that token on
+every write — the client-side gate is UX, not the security boundary.
+
+**Local dev caveat:** `ng serve` only serves the Angular app, not `/api/*` — there's
+no Worker running at `localhost:4200`. Backend changes need `wrangler deploy`
+against the real Cloudflare project and testing there; on this repo's original dev
+machine, `wrangler dev`/Miniflare couldn't run locally at all (the Workers runtime
+refuses to start below macOS 13.5). Frontend-only UI work still runs fine under
+`ng serve` — data loads will just fail against a non-existent local `/api/*` unless
+you're testing against the deployed Worker some other way.
+
 ## The two view modes
 
 One toggle in the header drives the whole app — tree, timeline, and dossier access
 switch together, because they all read the same shared signal.
 
-| | GM View | Player Preview |
+| | GM View | Player View |
 |---|---|---|
 | `visibility: "hidden"` people | Shown as a **redacted** card | Absent entirely |
 | `hideParentage` people | Shown, with a dashed "rumoured" line to the parent | Shown, **no line upward** |
 | `gmNotes` | Editable in the dossier panel | Not in the data, not in the DOM |
 | Per-person controls | Visibility, parentage, edit, dossier | None rendered |
 
-Player Preview is meant to be safe to put on a screen in front of your players.
+A fresh link lands in Player View by default — GM View requires the GM password
+(see "Live architecture"). Player View is meant to be safe to put on a screen in
+front of your players.
 It is not a CSS trick: the projection strips hidden records and `gmNotes` from the
 data before rendering, the dossier component is never instantiated, and a suite of
 tests asserts that no GM string reaches the player DOM.
@@ -68,7 +105,7 @@ Three subtleties the projection handles that are easy to get wrong:
 
 ## Data model
 
-### Person — `data/{world}.json`
+### Person — `{ people: Person[] }`, served at `/api/world/{world}`
 
 All people live in **one flat pool per world**, across every nation and house.
 Relationships are just id references, so a cross-house or cross-nation marriage is
@@ -99,7 +136,7 @@ visibility flags — even a fully `known` person's prep stays GM-only.
 
 > `notes` is player-visible; `gmNotes.secrets` is not. Keep the distinction in mind.
 
-### DynastyEvent — `data/{world}-events.json`
+### DynastyEvent — `{ events: DynastyEvent[] }`, served at `/api/world/{world}/events`
 
 Events are a separate collection, cross-linked to people by id rather than nested.
 
@@ -108,11 +145,12 @@ Events are a separate collection, cross-linked to people by id rather than neste
 | `id` | string | `e1`, `e2`, … |
 | `title` | string | |
 | `type` | enum | `birth`, `death`, `coronation`, `wedding`, `war`, `battle`, `treaty`, `other` |
-| `year` | number | |
+| `startYear` | number | Required. `startMonth` / `startDay` are optional precision on top |
+| `endYear` | number? | Optional — a spanning event (a reign, a war). `endMonth` / `endDay` are optional precision on top |
 | `era` | string? | Groups the timeline into labelled sections |
 | `description` | string? | |
-| `relatedPersonIds` | string[] | |
-| `nation` / `house` | string? | |
+| `relatedPersonIds` | string[] | Every person the event involves, not just one |
+| `nations` / `houses` | string[] | Which nation/house timelines the event appears on — manually curated, independent of `relatedPersonIds` (see "Filtering keeps the overlap") |
 | `visibility` | `"known"` \| `"hidden"` | Same meaning as on Person |
 
 ## Filtering keeps the overlap
@@ -124,6 +162,22 @@ still drawn at 55% opacity and labelled "married in — not core house", as *adj
 That is the whole point of one flat pool. Filter to one house and an in-married
 spouse from another house still shows up, dimmed, rather than vanishing — a strict
 filter would hide exactly the relationship a royal family chart exists to show.
+
+**The nation/house chips are multi-select with union semantics** — click a chip to
+jump to just that timeline (replacing the current selection, the fast path for
+switching between a nation and a house); Ctrl/Cmd-click to add or remove it from the
+current selection instead, combining several timelines into one view (e.g. "Nation
+Asha" + "House Milltree" together shows anyone/anything in either). An event
+qualifies for a timeline either automatically (it involves someone from there) or
+because a GM explicitly tagged it into `nations`/`houses` — the tag pickers on the
+event form let you pin an event onto a timeline it wouldn't otherwise reach.
+
+## Navigating the tree
+
+Click-and-drag anywhere on the tree to pan it (the cursor turns into a grab hand);
+scroll the wheel to zoom in and out, anchored under the cursor, or use the +/−/Reset
+control in the bottom-right corner. A click that doesn't move the cursor still
+selects a card as before — only an actual drag is treated as panning.
 
 ## Adding a nation or house
 
@@ -137,10 +191,10 @@ the filter chips are derived from whatever values exist. So:
    dimmed when you filter to the other house, which is the behaviour you want.
 3. **Set `generation`** to the parent's generation + 1. This decides the row; the
    validator warns when it disagrees with the parentage.
-4. **Save.** The `Save` button writes `data/{world}.json` and
-   `data/{world}-events.json`. Where a browser supports the File System Access API
-   you can save straight over the originals; otherwise the files download and you
-   move them into `data/` yourself.
+4. **Save.** The `Save` button POSTs both datasets to the live API — live for
+   everyone with the link within moments, no git commit/push/redeploy involved.
+   `Export backup` downloads a local copy for your own records; it is not itself
+   a save (see "Live architecture" and "Editing: app or tool?").
 
 ### House colours
 
@@ -156,22 +210,42 @@ house and it has a stable, on-palette colour immediately.
 2. Bulk-author the people in a spreadsheet and import them — see
    [`tools/README.md`](tools/README.md), and `tools/samples/people-template.csv`
    for the column layout.
-3. Point the app at it by changing `DEFAULT_WORLD` in
-   `frontend/src/app/services/tree-data.service.ts`.
+3. **Seed R2**, since the deployed app never reads `data/` directly:
+   ```bash
+   cd frontend
+   npx wrangler r2 object put age-of-aether-world-data/{world}.json --file=../data/{world}.json --content-type=application/json --remote
+   npx wrangler r2 object put age-of-aether-world-data/{world}-events.json --file=../data/{world}-events.json --content-type=application/json --remote
+   ```
+4. Point the app at it by changing `DEFAULT_WORLD` in
+   `frontend/src/app/services/tree-data.service.ts` (and `TimelineDataService`).
 
 ## Editing: app or tool?
 
-Both read and write the same files in the same format — byte-for-byte, so switching
-between them produces no spurious diffs.
+The app and the tool no longer share one live file the way they used to — the app
+reads and writes the live API (R2, via the Worker); the tool only ever reads and
+writes `data/*.json` on disk. They can drift:
 
-- **The app** is for shaping the tree: adding people one at a time, wiring
-  relationships with the search pickers, flipping visibility, writing dossiers.
-- **The tool** is for bulk work: importing a spreadsheet of thirty nobles, checking
-  the world for broken references, or hiding an entire house in one command.
+- **The app** is for shaping the tree live: adding people one at a time, wiring
+  relationships with the search pickers, flipping visibility, writing dossiers —
+  changes are visible to players as soon as you hit Save.
+- **The tool** is for bulk work against the local files: importing a spreadsheet of
+  thirty nobles, checking the world for broken references, or hiding an entire
+  house in one command.
+- **Reconciling the two directions:** after a tool run, re-seed R2 the same way
+  "Adding a whole new world" does, so the bulk edit goes live. There's no automatic
+  reverse sync — live edits made through the app are not written back to
+  `data/*.json` — so treat `data/*.json` as an import staging area and occasional
+  backup target (via `Export backup` in the app), not a mirror that's always current.
+- **Known gap: the tool's event model is stale.** `tools/src/DynastyTools/Models/DynastyEvent.cs`
+  still mirrors the *old* shape (`Year`, `Nation`, `House`) — the app's `DynastyEvent`
+  moved to `startYear`/`endYear` and `nations`/`houses` arrays (see "Data model"
+  above) and the tool hasn't been updated to match yet. Person import/validation is
+  unaffected; treat event data as an app-only, hand-edited-via-the-app concern until
+  the tool catches up.
 
 In-progress app edits are mirrored to `localStorage`, so a refresh will not lose
-work; `Revert` discards them and reloads from disk. A `*` on the Save button means
-there are unsaved changes.
+work; `Revert` discards them and reloads from the live API. A `*` on the Save
+button means there are unsaved changes.
 
 ## Notes on the build
 
@@ -187,8 +261,9 @@ there are unsaved changes.
 - **Visual language** is ported from the original reference React prototypes:
   parchment cards on a warm near-black ground, per-house border colours, antique gold
   for headings and marriage lines, deep red for GM View and dark green for Player
-  Preview. Icons come from `lucide-angular`, the official Angular port of the
+  View. Icons come from `lucide-angular`, the official Angular port of the
   prototypes' icon set.
-- **Tests:** 50 in the app (`cd frontend && npm test`), 68 in the tool
-  (`cd tools && dotnet test`) — all against synthetic fixtures, none depend on the
-  world data actually containing anyone.
+- **Tests:** 71 in the app (`cd frontend && npm test`), 8 for the Worker
+  (`cd frontend && npm run test:worker`), 68 in the tool (`cd tools && dotnet test`)
+  — all against synthetic fixtures, none depend on the world data actually
+  containing anyone.

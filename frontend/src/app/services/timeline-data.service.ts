@@ -6,12 +6,17 @@ import { DEFAULT_WORLD, TreeDataService } from './tree-data.service';
 import { ViewModeService } from './view-mode.service';
 
 /**
- * Loads, edits, and saves one world's events, mirroring `TreeDataService`.
+ * Loads, edits, and saves one world's events, mirroring `TreeDataService` —
+ * including its live-API loading (see that class for the fuller rationale).
  *
- * Events live in their own collection (`data/{world}-events.json`) and reference
- * people by id, so the same GM/player filtering pattern applies: hidden events
- * drop out of the player projection, and a surviving event's
- * `relatedPersonIds` is narrowed to people who survive too.
+ * Opens its own WebSocket to the same `/api/world/{world}/live` endpoint
+ * `TreeDataService` does (one WorldRoom per world relays both kinds over
+ * whatever sockets are connected to it, not one socket per dataset) and
+ * ignores any push whose `kind` isn't `'events'`.
+ *
+ * Events reference people by id, so the same GM/player filtering pattern
+ * applies: hidden events drop out of the player projection, and a surviving
+ * event's `relatedPersonIds` is narrowed to people who survive too.
  */
 @Injectable({ providedIn: 'root' })
 export class TimelineDataService {
@@ -49,9 +54,12 @@ export class TimelineDataService {
    * Events after the nation/house filter, the year range, and any person
    * selection made in the tree.
    *
-   * The nation/house test mirrors the tree's overlap rule: an event counts if its
-   * own nation/house matches *or* if it involves anyone in the filtered people
+   * The nation/house test mirrors the tree's overlap rule (union match — see
+   * `WorldFilter`): an event counts if *any* of its own `nations`/`houses` tags
+   * is in the selected sets *or* if it involves anyone in the filtered people
    * set, so a cross-house wedding stays on the timeline for both houses.
+   * Range/sort anchor on `startYear` only — `endYear` (when present) doesn't
+   * currently widen the range match.
    */
   readonly filteredEvents = computed<DynastyEvent[]>(() => {
     const filter = this.viewMode.filter();
@@ -63,31 +71,35 @@ export class TimelineDataService {
 
     return this.displayEvents()
       .filter((event) => {
-        if (from !== null && event.year < from) return false;
-        if (to !== null && event.year > to) return false;
+        if (from !== null && event.startYear < from) return false;
+        if (to !== null && event.startYear > to) return false;
 
         if (selectedPersonId !== null && !event.relatedPersonIds.includes(selectedPersonId)) {
           return false;
         }
 
-        if (filter.nation === null && filter.house === null) return true;
+        if (filter.nations.length === 0 && filter.houses.length === 0) return true;
 
         const ownMatch =
-          (filter.nation === null || event.nation === filter.nation) &&
-          (filter.house === null || event.house === filter.house);
+          event.nations.some((nation) => filter.nations.includes(nation)) ||
+          event.houses.some((house) => filter.houses.includes(house));
         if (ownMatch) return true;
 
         return event.relatedPersonIds.some((id) => peopleInScope.has(id));
       })
-      .sort((a, b) => a.year - b.year || a.title.localeCompare(b.title));
+      .sort((a, b) => a.startYear - b.startYear || a.title.localeCompare(b.title));
   });
 
   /** Year bounds across the events currently in view, for the range slider. */
   readonly yearBounds = computed<{ min: number; max: number } | null>(() => {
-    const years = this.displayEvents().map((event) => event.year);
+    const years = this.displayEvents().map((event) => event.startYear);
     if (years.length === 0) return null;
     return { min: Math.min(...years), max: Math.max(...years) };
   });
+
+  private socket: WebSocket | null = null;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── Loading & persistence ─────────────────────────────────────────────────
 
@@ -96,23 +108,23 @@ export class TimelineDataService {
     this._error.set(null);
     this._world.set(world);
 
-    try {
-      if (!discardLocalEdits) {
-        const draft = this.readDraft(world);
-        if (draft !== null) {
-          this._events.set(draft);
-          this._dirty.set(true);
-          return;
-        }
-      }
+    const draft = discardLocalEdits ? null : this.readDraft(world);
+    if (draft !== null) {
+      this._events.set(draft);
+      this._dirty.set(true);
+      this._loading.set(false);
+      this.connectLive(world);
+      return;
+    }
 
-      const response = await fetch(`data/${world}-events.json`, { cache: 'no-store' });
+    try {
+      const response = await fetch(`/api/world/${encodeURIComponent(world)}/events`, { cache: 'no-store' });
       if (!response.ok) {
-        throw new Error(`data/${world}-events.json responded ${response.status}`);
+        throw new Error(`/api/world/${world}/events responded ${response.status}`);
       }
       const parsed = (await response.json()) as WorldEventsFile;
       if (!Array.isArray(parsed.events)) {
-        throw new Error(`data/${world}-events.json has no "events" array`);
+        throw new Error(`/api/world/${world}/events has no "events" array`);
       }
       this._events.set(parsed.events);
       this._dirty.set(false);
@@ -121,6 +133,61 @@ export class TimelineDataService {
       this._error.set(cause instanceof Error ? cause.message : String(cause));
     } finally {
       this._loading.set(false);
+    }
+
+    this.connectLive(world);
+  }
+
+  /** See TreeDataService.connectLive — same endpoint, same reconnect strategy, filtered to 'events' pushes. */
+  private connectLive(world: string): void {
+    if (typeof WebSocket === 'undefined') return;
+
+    this.socket?.close();
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    let socket: WebSocket;
+    try {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      socket = new WebSocket(`${proto}://${location.host}/api/world/${encodeURIComponent(world)}/live`);
+    } catch {
+      return;
+    }
+    this.socket = socket;
+
+    socket.addEventListener('open', () => {
+      this.reconnectAttempt = 0;
+    });
+    socket.addEventListener('message', (event) => {
+      this.applyLivePush(String(event.data));
+    });
+    socket.addEventListener('close', () => {
+      if (this.socket !== socket) return;
+      this.scheduleReconnect(world);
+    });
+    socket.addEventListener('error', () => {
+      socket.close();
+    });
+  }
+
+  private scheduleReconnect(world: string): void {
+    const delayMs = Math.min(30_000, 1_000 * 2 ** this.reconnectAttempt);
+    this.reconnectAttempt += 1;
+    this.reconnectTimer = setTimeout(() => this.connectLive(world), delayMs);
+  }
+
+  private applyLivePush(raw: string): void {
+    try {
+      const message = JSON.parse(raw) as { kind?: string; payload?: string };
+      if (message.kind !== 'events' || typeof message.payload !== 'string') return; // 'people' is TreeDataService's concern
+      const parsed = JSON.parse(message.payload) as WorldEventsFile;
+      if (!Array.isArray(parsed.events)) return;
+      this._events.set(parsed.events);
+      this._dirty.set(false);
+    } catch {
+      // A malformed push isn't worth surfacing as a hard error.
     }
   }
 
