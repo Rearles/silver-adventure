@@ -28,7 +28,7 @@
   "devDependencies": {
     "@angular/build": "^21.2.21",
     "@angular/cli": "^21.2.21",
-    "@angular/compiler-cli": "^21.2.0",
+    "@angular/compiler-cli": "^22.1.2",
     "@cloudflare/workers-types": "^5.20260818.1",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
