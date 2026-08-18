@@ -27,8 +27,8 @@ Confirmed decisions (already answered by user): Organization entity type for Hou
 - [x] Create `frontend/src/app/components/wiki-text/` — parses `[[Title]]` tokens, renders hoverable/clickable links
 - [x] Create `frontend/src/app/components/link-preview-card/` — global floating preview card, positioned via anchor rect
 - [x] Create `frontend/src/app/components/lore-library/` — list (search/filter by org vs topic), article view, GM create/edit/delete/visibility-toggle form, all in a drawer/modal like `GmDossier`
-- [ ] Wire `<app-link-preview-card>` and `<app-lore-library>` into `frontend/src/app/app.html`, add a header "Lore" toggle button in `frontend/src/app/app.ts`/`.html`, style the drawer/modal open state in `frontend/src/app/app.scss`
-- [ ] Extend `frontend/src/app/app.ts` — inject `LoreDataService`, call `loreData.load()` in constructor, fold `loreData.dirty()` into the `dirty` computed, add a third `postWorld(.../lore, ...)` call to `onSaveWorld()`, a third `revert()` call to `onRevert()`, and a third `downloadTextFile()` call to `onExportBackup()`
+- [x] Wire `<app-link-preview-card>` and `<app-lore-library>` into `frontend/src/app/app.html`, add a header "Lore" toggle button in `frontend/src/app/app.ts`/`.html`, style the drawer/modal open state in `frontend/src/app/app.scss`
+- [x] Extend `frontend/src/app/app.ts` — inject `LoreDataService`, call `loreData.load()` in constructor, fold `loreData.dirty()` into the `dirty` computed, add a third `postWorld(.../lore, ...)` call to `onSaveWorld()`, a third `revert()` call to `onRevert()`, and a third `downloadTextFile()` call to `onExportBackup()`
 - [ ] Wire `<app-wiki-text>` into existing read-only text displays: person notes (`frontend/src/app/components/gm-dossier/` or wherever `Person.notes` renders) and event description (`frontend/src/app/components/timeline-view/timeline-view.html`)
 - [ ] Update root `README.md` with a short "Lore pages" section documenting `[[Wiki Link]]` syntax and where lore lives in the UI
 - [ ] Test: add `toPlayerLore()` cases to `frontend/src/app/models/projection.spec.ts` (hidden doc dropped, cross-ref scrubbing for people/events/lore)

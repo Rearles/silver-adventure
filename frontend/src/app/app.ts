@@ -1,11 +1,15 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Eye, EyeOff, LucideAngularModule } from 'lucide-angular';
+import { BookOpen, Eye, EyeOff, LucideAngularModule } from 'lucide-angular';
 import { FilterBar } from './components/filter-bar/filter-bar';
 import { GmDossier } from './components/gm-dossier/gm-dossier';
+import { LinkPreviewCard } from './components/link-preview-card/link-preview-card';
+import { LoreLibrary } from './components/lore-library/lore-library';
 import { PersonForm } from './components/person-form/person-form';
 import { TimelineView } from './components/timeline-view/timeline-view';
 import { TreeView } from './components/tree-view/tree-view';
 import { downloadTextFile } from './services/file-export';
+import { LoreDataService } from './services/lore-data.service';
+import { LoreUiService } from './services/lore-ui.service';
 import { SessionService } from './services/session.service';
 import { TimelineDataService } from './services/timeline-data.service';
 import { TreeDataService } from './services/tree-data.service';
@@ -35,7 +39,16 @@ function postWorld(path: string, body: string, token: string): Promise<Response>
  */
 @Component({
   selector: 'app-root',
-  imports: [FilterBar, GmDossier, LucideAngularModule, PersonForm, TimelineView, TreeView],
+  imports: [
+    FilterBar,
+    GmDossier,
+    LinkPreviewCard,
+    LoreLibrary,
+    LucideAngularModule,
+    PersonForm,
+    TimelineView,
+    TreeView,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   host: {
@@ -46,10 +59,13 @@ export class App {
   private readonly viewMode = inject(ViewModeService);
   private readonly treeData = inject(TreeDataService);
   private readonly timelineData = inject(TimelineDataService);
+  private readonly loreData = inject(LoreDataService);
+  private readonly loreUi = inject(LoreUiService);
   private readonly session = inject(SessionService);
 
   readonly EyeIcon = Eye;
   readonly EyeOffIcon = EyeOff;
+  readonly BookOpenIcon = BookOpen;
 
   readonly isGmView = this.viewMode.isGmView;
   readonly isPlayerPreview = this.viewMode.isPlayerPreview;
@@ -84,15 +100,22 @@ export class App {
   readonly loadError = this.treeData.error;
   readonly hiddenPeopleCount = this.treeData.hiddenCount;
 
-  readonly dirty = computed<boolean>(() => this.treeData.dirty() || this.timelineData.dirty());
+  readonly dirty = computed<boolean>(
+    () => this.treeData.dirty() || this.timelineData.dirty() || this.loreData.dirty(),
+  );
 
   readonly formTarget = signal<FormTarget | null>(null);
   readonly dossierPersonId = signal<string | null>(null);
   readonly statusMessage = signal<string | null>(null);
+  readonly loreOpen = signal<boolean>(false);
+
+  /** Open either via the header toggle, or because a `[[Wiki Link]]` click asked for a specific doc. */
+  readonly showLore = computed<boolean>(() => this.loreOpen() || this.loreUi.openDocId() !== null);
 
   constructor() {
     void this.treeData.load();
     void this.timelineData.load();
+    void this.loreData.load();
   }
 
   async onSetMode(mode: 'gm' | 'player'): Promise<void> {
@@ -133,6 +156,15 @@ export class App {
     this.dossierPersonId.set(null);
   }
 
+  onToggleLore(): void {
+    this.loreOpen.update((open) => !open);
+  }
+
+  onCloseLore(): void {
+    this.loreOpen.set(false);
+    this.loreUi.close();
+  }
+
   async onSaveWorld(): Promise<void> {
     const token = this.session.token();
     if (token === null) {
@@ -142,18 +174,19 @@ export class App {
 
     const world = this.treeData.world();
     try {
-      const [peopleRes, eventsRes] = await Promise.all([
+      const [peopleRes, eventsRes, loreRes] = await Promise.all([
         postWorld(`/api/world/${encodeURIComponent(world)}`, this.treeData.serialize(), token),
         postWorld(`/api/world/${encodeURIComponent(world)}/events`, this.timelineData.serialize(), token),
+        postWorld(`/api/world/${encodeURIComponent(world)}/lore`, this.loreData.serialize(), token),
       ]);
 
-      if (peopleRes.status === 401 || eventsRes.status === 401) {
+      if (peopleRes.status === 401 || eventsRes.status === 401 || loreRes.status === 401) {
         this.session.clear();
         this.statusMessage.set('Your GM session expired — sign in again to save.');
         return;
       }
-      if (!peopleRes.ok || !eventsRes.ok) {
-        throw new Error(`people ${peopleRes.status}, events ${eventsRes.status}`);
+      if (!peopleRes.ok || !eventsRes.ok || !loreRes.ok) {
+        throw new Error(`people ${peopleRes.status}, events ${eventsRes.status}, lore ${loreRes.status}`);
       }
 
       // _dirty on both services clears itself shortly, via the write's own
@@ -168,6 +201,7 @@ export class App {
   async onRevert(): Promise<void> {
     await this.treeData.revert();
     await this.timelineData.revert();
+    await this.loreData.revert();
     this.statusMessage.set('Reverted to the last saved version.');
   }
 
@@ -175,7 +209,8 @@ export class App {
   onExportBackup(): void {
     downloadTextFile(this.treeData.fileName(), this.treeData.serialize());
     downloadTextFile(this.timelineData.fileName(), this.timelineData.serialize());
-    this.statusMessage.set('Downloaded a local backup of the current people and events.');
+    downloadTextFile(this.loreData.fileName(), this.loreData.serialize());
+    this.statusMessage.set('Downloaded a local backup of the current people, events, and lore.');
   }
 
   onDismissStatus(): void {

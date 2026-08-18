@@ -64,11 +64,11 @@ export class LinkPreviewCard {
 
   readonly style = computed<Record<string, string>>(() => {
     const rect = this.preview.anchorRect();
-    if (rect === null) return { display: 'none' };
+    if (rect === null) return { display: 'none', top: '0', left: '0' };
     const maxLeft = Math.max(8, window.innerWidth - CARD_WIDTH - 8);
     const left = Math.min(rect.left, maxLeft);
     const top = rect.bottom + 6;
-    return { top: `${top}px`, left: `${left}px` };
+    return { display: 'block', top: `${top}px`, left: `${left}px` };
   });
 
   onCardEnter(): void {

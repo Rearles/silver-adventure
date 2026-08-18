@@ -58,6 +58,17 @@
   background: var(--player);
 }
 
+.lore-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &[aria-pressed='true'] {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+}
+
 .hidden-count {
   font-size: 11px;
   color: var(--secret);

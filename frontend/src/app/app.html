@@ -23,6 +23,11 @@
       </button>
     }
 
+    <button type="button" class="btn lore-toggle" [attr.aria-pressed]="showLore()" (click)="onToggleLore()">
+      <lucide-icon [img]="BookOpenIcon" [size]="15" />
+      Lore
+    </button>
+
     <button
       type="button"
       class="mode-toggle"
@@ -95,3 +100,13 @@
     </aside>
   }
 }
+
+<!-- Lore is player-visible (unlike the GM-only panels above), so it mounts outside the `isGmView()` gate. -->
+@if (showLore()) {
+  <div class="overlay" (click)="onCloseLore()"></div>
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Lore library">
+    <app-lore-library (closed)="onCloseLore()" />
+  </aside>
+}
+
+<app-link-preview-card />
