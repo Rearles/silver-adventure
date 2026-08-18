@@ -1,11 +1,39 @@
 {
-  // Cloudflare Workers static-assets deploy config for the "age-of-aether-campaign"
-  // project. No Worker script — this is a pure static site (the Angular build
-  // output), served entirely from `assets`. Paths are relative to this file,
-  // which lives in the Workers Build "Root directory" (frontend/).
+  // Cloudflare Workers deploy config for the "age-of-aether-campaign" project.
+  // Static assets (the Angular build output) are served directly and take
+  // priority by default; any request that doesn't match a built file (e.g.
+  // everything under /api/*) falls through to the Worker script below. Paths
+  // are relative to this file, which lives in the Workers Build "Root
+  // directory" (frontend/).
   "name": "age-of-aether-campaign",
   "compatibility_date": "2026-08-17",
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist/frontend/browser"
-  }
+  },
+  // Source of truth for world data (see frontend/worker/index.ts). Bucket is
+  // created out-of-band via `wrangler r2 bucket create`, not by this config.
+  "r2_buckets": [
+    {
+      "binding": "WORLD_BUCKET",
+      "bucket_name": "age-of-aether-world-data"
+    }
+  ],
+  // WorldRoom relays live WebSocket broadcasts; it holds no durable state of
+  // its own (R2 is authoritative), so it only needs the free-plan-eligible
+  // SQLite storage backend (new_sqlite_classes, not new_classes).
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WORLD_ROOM",
+        "class_name": "WorldRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["WorldRoom"]
+    }
+  ]
 }

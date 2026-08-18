@@ -15,7 +15,7 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 ## Todos
 
 - [x] Create `frontend/worker/index.ts` (Worker entry) and `frontend/worker/world-room.ts` (Durable Object class)
-- [ ] Update `frontend/wrangler.jsonc` — add `main`, R2 bucket binding, DO binding + migrations block
+- [x] Update `frontend/wrangler.jsonc` — add `main`, R2 bucket binding, DO binding + migrations block
 - [ ] Run `wrangler r2 bucket create` for the world-data bucket; record the name used
 - [ ] Implement `GET /api/world/:world` in index.ts — reads the JSON blob from R2
 - [ ] Implement `POST /api/auth` in index.ts — checks `GM_PASSWORD` secret, issues signed session token
