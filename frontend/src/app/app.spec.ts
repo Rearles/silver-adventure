@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
+import { ViewModeService } from './services/view-mode.service';
 
 /**
  * Integration tests for the one guarantee the whole app exists to provide:
@@ -96,6 +97,11 @@ function stubFetch(): void {
 
 async function createApp() {
   const fixture = TestBed.createComponent(App);
+  // These tests are written assuming a GM-View starting point (the app's own
+  // default is 'player', for a safe bare link — see ViewModeService). Force
+  // 'gm' here so the fixture's baseline matches what each test expects before
+  // any toggleMode() calls.
+  TestBed.inject(ViewModeService).setMode('gm');
   await fixture.whenStable();
   fixture.detectChanges();
   await fixture.whenStable();
