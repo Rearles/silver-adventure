@@ -27,7 +27,7 @@
       (click)="onToggleMode()"
     >
       <lucide-icon [img]="isGmView() ? EyeIcon : EyeOffIcon" [size]="15" />
-      {{ isGmView() ? 'GM View — everything visible' : 'Player Preview — what they see' }}
+      {{ isGmView() ? 'GM View' : 'Player View' }}
     </button>
   </div>
 </header>
@@ -74,13 +74,13 @@
     </div>
   } @else {
     <div>
-      Player Preview: hidden records, rumoured parentage lines, and every GM dossier are
+      Player View: hidden records, rumoured parentage lines, and every GM dossier are
       absent from this view — there is nothing here to reveal by accident.
     </div>
   }
 </footer>
 
-<!-- GM-only surfaces. In Player Preview these are not instantiated at all, so
+<!-- GM-only surfaces. In Player View these are not instantiated at all, so
      neither the dossier component nor any gmNotes value reaches the DOM. -->
 @if (isGmView()) {
   @if (formTarget(); as target) {
