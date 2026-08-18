@@ -16,7 +16,7 @@ related: ["add-inline-person-creation-for-parent-child-spouse-relationships_2255
 
 - [x] Add `scale` signal + zoom clamp constants to `TreeView` (tree-view.ts)
 - [x] Wrap `.tree-canvas` in a fixed-size `.tree-canvas-sizer` div in tree-view.html, sized to `layout().width/height * scale()`
-- [ ] Apply `transform: scale()` with `transform-origin: 0 0` to `.tree-canvas` in tree-view.scss
+- [x] Apply `transform: scale()` with `transform-origin: 0 0` to `.tree-canvas` in tree-view.scss
 - [ ] Add pointer-drag panning on `.tree-scroll` (pointerdown/move/up adjusting `scrollLeft`/`scrollTop`), suppressing `onSelect` when a drag exceeded a small movement threshold
 - [ ] Add wheel-to-zoom on `.tree-scroll`, adjusting `scale()` clamped to [min, max] and re-anchoring scroll position under the cursor
 - [ ] Add zoom in/out/reset buttons to the tree toolbar, wired to `scale()`

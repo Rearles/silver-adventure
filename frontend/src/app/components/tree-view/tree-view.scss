@@ -10,8 +10,13 @@
   background-color: var(--bg);
 }
 
+.tree-canvas-sizer {
+  position: relative;
+}
+
 .tree-canvas {
   position: relative;
+  transform-origin: 0 0;
 }
 
 .links {
