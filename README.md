@@ -145,11 +145,12 @@ Events are a separate collection, cross-linked to people by id rather than neste
 | `id` | string | `e1`, `e2`, … |
 | `title` | string | |
 | `type` | enum | `birth`, `death`, `coronation`, `wedding`, `war`, `battle`, `treaty`, `other` |
-| `year` | number | |
+| `startYear` | number | Required. `startMonth` / `startDay` are optional precision on top |
+| `endYear` | number? | Optional — a spanning event (a reign, a war). `endMonth` / `endDay` are optional precision on top |
 | `era` | string? | Groups the timeline into labelled sections |
 | `description` | string? | |
-| `relatedPersonIds` | string[] | |
-| `nation` / `house` | string? | |
+| `relatedPersonIds` | string[] | Every person the event involves, not just one |
+| `nations` / `houses` | string[] | Which nation/house timelines the event appears on — manually curated, independent of `relatedPersonIds` (see "Filtering keeps the overlap") |
 | `visibility` | `"known"` \| `"hidden"` | Same meaning as on Person |
 
 ## Filtering keeps the overlap
@@ -161,6 +162,22 @@ still drawn at 55% opacity and labelled "married in — not core house", as *adj
 That is the whole point of one flat pool. Filter to one house and an in-married
 spouse from another house still shows up, dimmed, rather than vanishing — a strict
 filter would hide exactly the relationship a royal family chart exists to show.
+
+**The nation/house chips are multi-select with union semantics** — click a chip to
+jump to just that timeline (replacing the current selection, the fast path for
+switching between a nation and a house); Ctrl/Cmd-click to add or remove it from the
+current selection instead, combining several timelines into one view (e.g. "Nation
+Asha" + "House Milltree" together shows anyone/anything in either). An event
+qualifies for a timeline either automatically (it involves someone from there) or
+because a GM explicitly tagged it into `nations`/`houses` — the tag pickers on the
+event form let you pin an event onto a timeline it wouldn't otherwise reach.
+
+## Navigating the tree
+
+Click-and-drag anywhere on the tree to pan it (the cursor turns into a grab hand);
+scroll the wheel to zoom in and out, anchored under the cursor, or use the +/−/Reset
+control in the bottom-right corner. A click that doesn't move the cursor still
+selects a card as before — only an actual drag is treated as panning.
 
 ## Adding a nation or house
 
@@ -219,6 +236,12 @@ writes `data/*.json` on disk. They can drift:
   reverse sync — live edits made through the app are not written back to
   `data/*.json` — so treat `data/*.json` as an import staging area and occasional
   backup target (via `Export backup` in the app), not a mirror that's always current.
+- **Known gap: the tool's event model is stale.** `tools/src/DynastyTools/Models/DynastyEvent.cs`
+  still mirrors the *old* shape (`Year`, `Nation`, `House`) — the app's `DynastyEvent`
+  moved to `startYear`/`endYear` and `nations`/`houses` arrays (see "Data model"
+  above) and the tool hasn't been updated to match yet. Person import/validation is
+  unaffected; treat event data as an app-only, hand-edited-via-the-app concern until
+  the tool catches up.
 
 In-progress app edits are mirrored to `localStorage`, so a refresh will not lose
 work; `Revert` discards them and reloads from the live API. A `*` on the Save
@@ -240,6 +263,7 @@ button means there are unsaved changes.
   for headings and marriage lines, deep red for GM View and dark green for Player
   View. Icons come from `lucide-angular`, the official Angular port of the
   prototypes' icon set.
-- **Tests:** 49 in the app (`cd frontend && npm test`), 68 in the tool
-  (`cd tools && dotnet test`) — all against synthetic fixtures, none depend on the
-  world data actually containing anyone.
+- **Tests:** 71 in the app (`cd frontend && npm test`), 8 for the Worker
+  (`cd frontend && npm run test:worker`), 68 in the tool (`cd tools && dotnet test`)
+  — all against synthetic fixtures, none depend on the world data actually
+  containing anyone.
