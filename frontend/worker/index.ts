@@ -104,7 +104,7 @@ async function handleWriteWorld(request: Request, env: Env, world: string, kind:
  *  - POST /api/auth                   — check GM_PASSWORD, issue a session token [done]
  *  - POST /api/world/:world           — authenticated write to R2 + notify the DO [done]
  *  - POST /api/world/:world/events    — same, for events                         [done]
- *  - GET  /api/world/:world/live      — WebSocket upgrade, relayed via WorldRoom
+ *  - GET  /api/world/:world/live      — WebSocket upgrade, relayed via WorldRoom  [done]
  */
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -125,6 +125,13 @@ export default {
       if (segments.length === 4 && segments[3] === 'events') {
         if (request.method === 'GET') return readBlob(env, eventsKey(world), EMPTY_EVENTS);
         if (request.method === 'POST') return handleWriteWorld(request, env, world, 'events');
+      }
+      // WebSocket upgrades can't go through DO RPC (broadcast()) — they need
+      // a real fetch() to the stub, which is what returns the 101 response
+      // carrying the client end of the socket pair back through the Worker.
+      if (segments.length === 4 && segments[3] === 'live' && request.method === 'GET') {
+        const stub = env.WORLD_ROOM.get(env.WORLD_ROOM.idFromName(world));
+        return stub.fetch(request);
       }
     }
 
