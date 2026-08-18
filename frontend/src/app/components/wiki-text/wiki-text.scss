@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.wiki-link {
+  display: inline;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--gold);
+  border-bottom: 1px dotted var(--gold);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--text);
+    border-bottom-style: solid;
+  }
+}
+
+.wiki-link-missing {
+  color: var(--text-faint);
+  border-bottom-color: var(--text-faint);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--inlaw-note);
+    border-bottom-color: var(--inlaw-note);
+  }
+}

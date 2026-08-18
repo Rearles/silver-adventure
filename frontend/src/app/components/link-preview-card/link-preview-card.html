@@ -1,0 +1,37 @@
+@if (target(); as t) {
+  <div
+    class="preview-card"
+    [ngStyle]="style()"
+    (mouseenter)="onCardEnter()"
+    (mouseleave)="onCardLeave()"
+  >
+    @if (t.kind === 'person' && person(); as p) {
+      <div class="eyebrow">Person</div>
+      <h3>{{ p.name }}</h3>
+      <p class="meta">
+        @if (p.title) {
+          {{ p.title }} ·
+        }
+        House {{ p.house }}, {{ p.nation }}
+        @if (lifespan()) {
+          · {{ lifespan() }}
+        }
+      </p>
+    } @else if (t.kind === 'lore' && lore(); as doc) {
+      <div class="eyebrow">{{ doc.type === 'organization' ? 'Organization' : 'Lore' }}</div>
+      <h3>{{ doc.title }}</h3>
+      @if (excerpt()) {
+        <app-wiki-text [text]="excerpt()" />
+      } @else {
+        <p class="meta empty">No content yet.</p>
+      }
+      <button type="button" class="btn btn-sm" (click)="openLore()">Open full page</button>
+    } @else if (t.kind === 'missing') {
+      <div class="eyebrow">No page yet</div>
+      <h3>{{ missingTitle() }}</h3>
+      <p class="meta empty">
+        Nothing is linked to “{{ missingTitle() }}” yet — no matching person or lore page.
+      </p>
+    }
+  </div>
+}

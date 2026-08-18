@@ -1,4 +1,5 @@
 import type { DynastyEvent } from './dynasty-event';
+import type { LoreDoc } from './lore-doc';
 import type { Person, PersonLike, PlayerPerson } from './person';
 import type { WorldFilter } from './world';
 
@@ -67,6 +68,35 @@ export function toPlayerEvents(
       ...event,
       relatedPersonIds: event.relatedPersonIds.filter((id) => visiblePersonIds.has(id)),
     }));
+}
+
+/**
+ * Projects lore pages down to what players may see: hidden pages are
+ * removed, and every cross-reference list (`relatedPersonIds`,
+ * `relatedEventIds`, `relatedLoreIds`) is narrowed to survivors of the
+ * corresponding projection — so a public article can't out a secret person,
+ * event, or sibling lore page just by linking to it.
+ */
+export function toPlayerLore(
+  lore: readonly LoreDoc[],
+  people: readonly Person[],
+  events: readonly DynastyEvent[],
+): LoreDoc[] {
+  const visiblePersonIds = new Set(
+    people.filter((person) => person.visibility === 'known').map((person) => person.id),
+  );
+  const visibleEventIds = new Set(
+    events.filter((event) => event.visibility === 'known').map((event) => event.id),
+  );
+  const visibleLore = lore.filter((doc) => doc.visibility === 'known');
+  const visibleLoreIds = new Set(visibleLore.map((doc) => doc.id));
+
+  return visibleLore.map((doc) => ({
+    ...doc,
+    relatedPersonIds: doc.relatedPersonIds.filter((id) => visiblePersonIds.has(id)),
+    relatedEventIds: doc.relatedEventIds.filter((id) => visibleEventIds.has(id)),
+    relatedLoreIds: doc.relatedLoreIds.filter((id) => visibleLoreIds.has(id)),
+  }));
 }
 
 /**

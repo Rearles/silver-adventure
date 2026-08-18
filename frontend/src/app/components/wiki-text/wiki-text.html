@@ -1,0 +1,20 @@
+@for (paragraph of paragraphs(); track $index) {
+  <p>
+    @for (segment of paragraph; track $index) {
+      @if (segment.kind === 'text') {
+        {{ segment.value }}
+      } @else {
+        <button
+          type="button"
+          class="wiki-link"
+          [class.wiki-link-missing]="segment.target.kind === 'missing'"
+          (mouseenter)="onEnter($event, segment)"
+          (mouseleave)="onLeave()"
+          (focus)="onEnter($event, segment)"
+          (blur)="onLeave()"
+          (click)="onClick(segment)"
+        >{{ segment.raw }}</button>
+      }
+    }
+  </p>
+}

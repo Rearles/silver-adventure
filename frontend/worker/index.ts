@@ -1,7 +1,8 @@
 import type { DynastyEvent } from '../src/app/models/dynasty-event';
+import type { LoreDoc } from '../src/app/models/lore-doc';
 import type { Person } from '../src/app/models/person';
-import { toPlayerEvents, toPlayerPeople } from '../src/app/models/projection';
-import type { WorldEventsFile, WorldPeopleFile } from '../src/app/models/world';
+import { toPlayerEvents, toPlayerLore, toPlayerPeople } from '../src/app/models/projection';
+import type { WorldEventsFile, WorldLoreFile, WorldPeopleFile } from '../src/app/models/world';
 import type { Env } from './env';
 import { checkPassword, issueSessionToken, verifySessionToken } from './auth';
 import { WorldRoom } from './world-room';
@@ -19,6 +20,9 @@ function peopleKey(world: string): string {
 }
 function eventsKey(world: string): string {
   return `${world}-events.json`;
+}
+function loreKey(world: string): string {
+  return `${world}-lore.json`;
 }
 
 function jsonError(status: number, error: string): Response {
@@ -71,6 +75,18 @@ async function readEvents(request: Request, env: Env, world: string): Promise<Re
   return new Response(JSON.stringify(projected), { status: 200, headers: JSON_HEADERS });
 }
 
+/** GET /api/world/:world/lore — same GM-vs-player split, via toPlayerLore. Needs both people and events, to scrub cross-references to either. */
+async function readLore(request: Request, env: Env, world: string): Promise<Response> {
+  const lore = (await readR2Json<WorldLoreFile>(env, loreKey(world)))?.lore ?? [];
+  if (await isAuthenticated(request, env)) {
+    return new Response(JSON.stringify({ lore }), { status: 200, headers: JSON_HEADERS });
+  }
+  const people = (await readR2Json<WorldPeopleFile>(env, peopleKey(world)))?.people ?? [];
+  const events = (await readR2Json<WorldEventsFile>(env, eventsKey(world)))?.events ?? [];
+  const projected: WorldLoreFile = { lore: toPlayerLore(lore, people, events) };
+  return new Response(JSON.stringify(projected), { status: 200, headers: JSON_HEADERS });
+}
+
 /** POST /api/auth — { password } in, { token } out. The real security boundary: */
 async function handleAuth(request: Request, env: Env): Promise<Response> {
   let body: unknown;
@@ -103,7 +119,7 @@ async function requireSession(request: Request, env: Env): Promise<Response | nu
   return null;
 }
 
-type WorldKind = 'people' | 'events';
+type WorldKind = 'people' | 'events' | 'lore';
 
 /** Shallow shape check — just enough to catch a malformed body before it lands in R2. */
 function hasArrayField(value: unknown, field: string): boolean {
@@ -122,12 +138,12 @@ async function handleWriteWorld(request: Request, env: Env, world: string, kind:
   } catch {
     return jsonError(400, 'invalid JSON body');
   }
-  const field = kind === 'people' ? 'people' : 'events';
+  const field = kind === 'people' ? 'people' : kind === 'events' ? 'events' : 'lore';
   if (!hasArrayField(parsed, field)) {
     return jsonError(400, `expected { ${field}: [...] }`);
   }
 
-  const key = kind === 'people' ? peopleKey(world) : eventsKey(world);
+  const key = kind === 'people' ? peopleKey(world) : kind === 'events' ? eventsKey(world) : loreKey(world);
   await env.WORLD_BUCKET.put(key, text, { httpMetadata: { contentType: 'application/json' } });
 
   const stub = env.WORLD_ROOM.get(env.WORLD_ROOM.idFromName(world));
@@ -149,9 +165,15 @@ async function playerFilteredBroadcast(kind: WorldKind, parsed: unknown, env: En
     const people = (parsed as WorldPeopleFile).people as Person[];
     return JSON.stringify({ people: toPlayerPeople(people) } satisfies WorldPeopleFile);
   }
-  const events = (parsed as WorldEventsFile).events as DynastyEvent[];
+  if (kind === 'events') {
+    const events = (parsed as WorldEventsFile).events as DynastyEvent[];
+    const people = (await readR2Json<WorldPeopleFile>(env, peopleKey(world)))?.people ?? [];
+    return JSON.stringify({ events: toPlayerEvents(events, people) } satisfies WorldEventsFile);
+  }
+  const lore = (parsed as WorldLoreFile).lore as LoreDoc[];
   const people = (await readR2Json<WorldPeopleFile>(env, peopleKey(world)))?.people ?? [];
-  return JSON.stringify({ events: toPlayerEvents(events, people) } satisfies WorldEventsFile);
+  const events = (await readR2Json<WorldEventsFile>(env, eventsKey(world)))?.events ?? [];
+  return JSON.stringify({ lore: toPlayerLore(lore, people, events) } satisfies WorldLoreFile);
 }
 
 /**
@@ -159,9 +181,11 @@ async function playerFilteredBroadcast(kind: WorldKind, parsed: unknown, env: En
  * are filled in across plan steps:
  *  - GET  /api/world/:world           — read people from R2 (public read, GM-vs-player projected) [done]
  *  - GET  /api/world/:world/events    — read events from R2 (public read, GM-vs-player projected) [done]
+ *  - GET  /api/world/:world/lore      — read lore from R2 (public read, GM-vs-player projected)   [done]
  *  - POST /api/auth                   — check GM_PASSWORD, issue a session token [done]
  *  - POST /api/world/:world           — authenticated write to R2 + notify the DO [done]
  *  - POST /api/world/:world/events    — same, for events                         [done]
+ *  - POST /api/world/:world/lore      — same, for lore                           [done]
  *  - GET  /api/world/:world/live      — WebSocket upgrade, relayed via WorldRoom  [done]
  */
 export default {
@@ -183,6 +207,10 @@ export default {
       if (segments.length === 4 && segments[3] === 'events') {
         if (request.method === 'GET') return readEvents(request, env, world);
         if (request.method === 'POST') return handleWriteWorld(request, env, world, 'events');
+      }
+      if (segments.length === 4 && segments[3] === 'lore') {
+        if (request.method === 'GET') return readLore(request, env, world);
+        if (request.method === 'POST') return handleWriteWorld(request, env, world, 'lore');
       }
       // WebSocket upgrades can't go through DO RPC (broadcast()) — they need
       // a real fetch() to the stub, which is what returns the 101 response

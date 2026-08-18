@@ -1,4 +1,5 @@
 import type { DynastyEvent } from './dynasty-event';
+import type { LoreDoc } from './lore-doc';
 import type { Person } from './person';
 
 /** Shape of `data/{world}.json`. */
@@ -9,6 +10,11 @@ export interface WorldPeopleFile {
 /** Shape of `data/{world}-events.json`. */
 export interface WorldEventsFile {
   events: DynastyEvent[];
+}
+
+/** Shape of `data/{world}-lore.json`. */
+export interface WorldLoreFile {
+  lore: LoreDoc[];
 }
 
 /**

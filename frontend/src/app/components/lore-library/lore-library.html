@@ -1,0 +1,245 @@
+<section class="library">
+  <header class="library-header">
+    <div class="who">
+      <lucide-icon [img]="BookOpenIcon" [size]="16" />
+      <h2>Lore</h2>
+    </div>
+    <button type="button" class="icon-btn" (click)="onClose()" aria-label="Close lore library">
+      <lucide-icon [img]="CloseIcon" [size]="18" />
+    </button>
+  </header>
+
+  @switch (mode()) {
+    @case ('list') {
+      <div class="toolbar">
+        <input
+          type="search"
+          placeholder="Search lore…"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
+        />
+        <div class="type-tabs">
+          <button type="button" [class.active]="typeFilter() === 'all'" (click)="onFilterType('all')">
+            All
+          </button>
+          <button
+            type="button"
+            [class.active]="typeFilter() === 'organization'"
+            (click)="onFilterType('organization')"
+          >
+            Organizations
+          </button>
+          <button type="button" [class.active]="typeFilter() === 'topic'" (click)="onFilterType('topic')">
+            Topics
+          </button>
+        </div>
+        @if (isGmView()) {
+          <button type="button" class="btn btn-sm btn-primary" (click)="startCreate()">
+            <lucide-icon [img]="PlusIcon" [size]="13" />
+            New page
+          </button>
+        }
+      </div>
+
+      <div class="doc-list">
+        @for (doc of filteredDocs(); track doc.id) {
+          <button type="button" class="doc-row" (click)="openDoc(doc.id)">
+            <span class="doc-type" [class.doc-type-org]="doc.type === 'organization'">
+              {{ doc.type === 'organization' ? 'Org' : 'Topic' }}
+            </span>
+            <span class="doc-title">{{ doc.title }}</span>
+            @if (isGmView() && doc.visibility === 'hidden') {
+              <lucide-icon [img]="EyeOffIcon" [size]="13" class="hidden-flag" />
+            }
+          </button>
+        } @empty {
+          <p class="empty">No lore pages yet.</p>
+        }
+      </div>
+    }
+
+    @case ('article') {
+      @if (selectedDoc(); as doc) {
+        <div class="article">
+          <div class="article-toolbar">
+            <button type="button" class="btn btn-sm" (click)="backToList()">← Back</button>
+            @if (isGmView()) {
+              <span class="spacer"></span>
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-primary]="doc.visibility === 'hidden'"
+                (click)="onToggleVisibility()"
+              >
+                {{ doc.visibility === 'hidden' ? 'Hidden from players' : 'Known to players' }}
+              </button>
+              <button type="button" class="btn btn-sm" (click)="startEdit()">
+                <lucide-icon [img]="PencilIcon" [size]="13" />
+                Edit
+              </button>
+              <button type="button" class="btn btn-sm btn-danger" (click)="onDelete()">
+                <lucide-icon [img]="TrashIcon" [size]="13" />
+                Delete
+              </button>
+            }
+          </div>
+
+          <div class="eyebrow">{{ doc.type === 'organization' ? 'Organization' : 'Lore' }}</div>
+          <h1>{{ doc.title }}</h1>
+          @if (doc.subjectName) {
+            <p class="subject">Subject: {{ doc.subjectName }}</p>
+          }
+
+          @if (doc.body) {
+            <app-wiki-text [text]="doc.body" />
+          } @else {
+            <p class="empty">No content yet.</p>
+          }
+
+          @if (relatedPeople().length + relatedEvents().length + relatedLore().length > 0) {
+            <div class="related">
+              <div class="related-label">Related</div>
+              <div class="chips">
+                @for (person of relatedPeople(); track person.id) {
+                  <span class="chip chip-person">{{ person.name }}</span>
+                }
+                @for (event of relatedEvents(); track event.id) {
+                  <span class="chip chip-event">{{ event.title }}</span>
+                }
+                @for (related of relatedLore(); track related.id) {
+                  <button type="button" class="chip chip-lore" (click)="openDoc(related.id)">
+                    {{ related.title }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @case ('edit') {
+      <form class="edit-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="field">
+          <label for="ll-title">Title</label>
+          <input id="ll-title" formControlName="title" placeholder="King Connor the Great" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="ll-type">Type</label>
+            <select id="ll-type" formControlName="type">
+              @for (type of docTypes; track type) {
+                <option [value]="type">{{ type === 'organization' ? 'Organization' : 'Topic' }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="ll-visibility">Visibility</label>
+            <select id="ll-visibility" formControlName="visibility">
+              <option value="known">Known to players</option>
+              <option value="hidden">Hidden from players</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="ll-subject">Subject name (optional)</label>
+          <input
+            id="ll-subject"
+            formControlName="subjectName"
+            placeholder="House/nation name, if this page is about one"
+          />
+        </div>
+
+        <div class="field">
+          <label for="ll-body">Body</label>
+          <textarea
+            id="ll-body"
+            formControlName="body"
+            rows="10"
+            placeholder="Write the article. Use [[Name]] to link a person or another lore page."
+          ></textarea>
+        </div>
+
+        <div class="field">
+          <label>Related people</label>
+          <div class="chips">
+            @for (id of relatedPersonIds(); track id) {
+              <span class="chip">
+                {{ nameFor(id) }}
+                <button type="button" (click)="removePerson(id)" aria-label="Remove">×</button>
+              </span>
+            }
+          </div>
+          <input
+            placeholder="Search people to add…"
+            [value]="personSearch()"
+            (input)="personSearch.set($any($event.target).value)"
+          />
+          @if (personSearch() && personResults().length > 0) {
+            <div class="results">
+              @for (p of personResults(); track p.id) {
+                <button type="button" (click)="addPerson(p.id)">{{ p.name }}</button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="field">
+          <label>Related events</label>
+          <div class="chips">
+            @for (id of relatedEventIds(); track id) {
+              <span class="chip">
+                {{ eventTitleFor(id) }}
+                <button type="button" (click)="removeEvent(id)" aria-label="Remove">×</button>
+              </span>
+            }
+          </div>
+          <input
+            placeholder="Search events to add…"
+            [value]="eventSearch()"
+            (input)="eventSearch.set($any($event.target).value)"
+          />
+          @if (eventSearch() && eventResults().length > 0) {
+            <div class="results">
+              @for (e of eventResults(); track e.id) {
+                <button type="button" (click)="addEvent(e.id)">{{ e.title }}</button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="field">
+          <label>Related lore</label>
+          <div class="chips">
+            @for (id of relatedLoreIds(); track id) {
+              <span class="chip">
+                {{ loreTitleFor(id) }}
+                <button type="button" (click)="removeLore(id)" aria-label="Remove">×</button>
+              </span>
+            }
+          </div>
+          <input
+            placeholder="Search lore pages to add…"
+            [value]="loreSearch()"
+            (input)="loreSearch.set($any($event.target).value)"
+          />
+          @if (loreResults().length > 0) {
+            <div class="results">
+              @for (d of loreResults(); track d.id) {
+                <button type="button" (click)="addLore(d.id)">{{ d.title }}</button>
+              }
+            </div>
+          }
+        </div>
+
+        <footer class="edit-footer">
+          <span class="spacer"></span>
+          <button type="button" class="btn" (click)="cancelEdit()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save page</button>
+        </footer>
+      </form>
+    }
+  }
+</section>

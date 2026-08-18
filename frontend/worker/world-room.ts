@@ -26,7 +26,7 @@ export class WorldRoom extends DurableObject<Env> {
   }
 
   /** RPC target from the Worker's write route (index.ts) after a successful R2 write. */
-  async broadcast(kind: 'people' | 'events', payload: string): Promise<void> {
+  async broadcast(kind: 'people' | 'events' | 'lore', payload: string): Promise<void> {
     const message = JSON.stringify({ kind, payload });
     for (const socket of this.ctx.getWebSockets()) {
       try {
