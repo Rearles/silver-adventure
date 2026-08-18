@@ -232,9 +232,13 @@ export class PersonForm {
       ...(deathMonth !== null ? { deathMonth } : {}),
       ...(deathDay !== null ? { deathDay } : {}),
       ...(value.successionOrder !== null ? { successionOrder: value.successionOrder } : {}),
-      ...(value.notes.trim() !== '' ? { notes: value.notes.trim() } : {}),
       ...(tags.length > 0 ? { tags } : {}),
     };
+    // `notes` is explicit `undefined` (never an omitted key) so an edit that clears
+    // the field actually clears it: `updatePerson` merges via spread, and an omitted
+    // key would leave the previous value in place instead of blanking it.
+    const trimmedNotes = value.notes.trim();
+    draft.notes = trimmedNotes !== '' ? trimmedNotes : undefined;
 
     const existingId = this.personId();
     if (existingId !== null) {
