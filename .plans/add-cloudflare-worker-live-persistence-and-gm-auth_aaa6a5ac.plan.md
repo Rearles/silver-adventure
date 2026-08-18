@@ -19,7 +19,7 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 - [x] Run `wrangler r2 bucket create` for the world-data bucket; record the name used — `age-of-aether-world-data`
 - [x] Implement `GET /api/world/:world` in index.ts — reads the JSON blob from R2
 - [x] Implement `POST /api/auth` in index.ts — checks `GM_PASSWORD` secret, issues signed session token
-- [ ] Implement `POST /api/world/:world` in index.ts — verify token, write R2, notify the DO
+- [x] Implement `POST /api/world/:world` in index.ts — verify token, write R2, notify the DO
 - [ ] Implement `WorldRoom` DO — WebSocket upgrade handling + broadcast on write notification
 - [ ] Set `GM_PASSWORD` and `SESSION_SECRET` via `wrangler secret put` (not committed to git)
 - [ ] Update `TreeDataService.load()` — fetch from `/api/world/:world`, open WebSocket, apply pushes

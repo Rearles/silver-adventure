@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { checkPassword, issueSessionToken } from './auth';
+import { checkPassword, issueSessionToken, verifySessionToken } from './auth';
 import { WorldRoom } from './world-room';
 
 // wrangler's durable_objects binding resolves `class_name` against an export
@@ -53,13 +53,57 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
   return new Response(JSON.stringify({ token }), { status: 200, headers: JSON_HEADERS });
 }
 
+/** Requires a valid `Authorization: Bearer <token>` header. Returns an error Response to short-circuit with, or null if authorized. */
+async function requireSession(request: Request, env: Env): Promise<Response | null> {
+  const header = request.headers.get('Authorization') ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';
+  if (token === '' || !(await verifySessionToken(token, env))) {
+    return jsonError(401, 'missing or invalid session token');
+  }
+  return null;
+}
+
+type WorldKind = 'people' | 'events';
+
+/** Shallow shape check — just enough to catch a malformed body before it lands in R2. */
+function hasArrayField(value: unknown, field: string): boolean {
+  return typeof value === 'object' && value !== null && Array.isArray((value as Record<string, unknown>)[field]);
+}
+
+/** POST /api/world/:world (people) and POST /api/world/:world/events — authenticated write to R2 + DO notify. */
+async function handleWriteWorld(request: Request, env: Env, world: string, kind: WorldKind): Promise<Response> {
+  const unauthorized = await requireSession(request, env);
+  if (unauthorized !== null) return unauthorized;
+
+  const text = await request.text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return jsonError(400, 'invalid JSON body');
+  }
+  const field = kind === 'people' ? 'people' : 'events';
+  if (!hasArrayField(parsed, field)) {
+    return jsonError(400, `expected { ${field}: [...] }`);
+  }
+
+  const key = kind === 'people' ? peopleKey(world) : eventsKey(world);
+  await env.WORLD_BUCKET.put(key, text, { httpMetadata: { contentType: 'application/json' } });
+
+  const stub = env.WORLD_ROOM.get(env.WORLD_ROOM.idFromName(world));
+  await stub.broadcast(kind, text);
+
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: JSON_HEADERS });
+}
+
 /**
  * Worker entry point for the "age-of-aether-campaign" live API. Route bodies
  * are filled in across plan steps:
  *  - GET  /api/world/:world           — read people from R2 (public)      [done]
  *  - GET  /api/world/:world/events    — read events from R2 (public)      [done]
  *  - POST /api/auth                   — check GM_PASSWORD, issue a session token [done]
- *  - POST /api/world/:world           — authenticated write to R2 + notify the DO
+ *  - POST /api/world/:world           — authenticated write to R2 + notify the DO [done]
+ *  - POST /api/world/:world/events    — same, for events                         [done]
  *  - GET  /api/world/:world/live      — WebSocket upgrade, relayed via WorldRoom
  */
 export default {
@@ -71,19 +115,16 @@ export default {
       return handleAuth(request, env);
     }
 
-    if (
-      request.method === 'GET' &&
-      segments[0] === 'api' &&
-      segments[1] === 'world' &&
-      segments[2] !== undefined
-    ) {
+    if (segments[0] === 'api' && segments[1] === 'world' && segments[2] !== undefined) {
       const world = decodeURIComponent(segments[2]);
 
       if (segments.length === 3) {
-        return readBlob(env, peopleKey(world), EMPTY_PEOPLE);
+        if (request.method === 'GET') return readBlob(env, peopleKey(world), EMPTY_PEOPLE);
+        if (request.method === 'POST') return handleWriteWorld(request, env, world, 'people');
       }
       if (segments.length === 4 && segments[3] === 'events') {
-        return readBlob(env, eventsKey(world), EMPTY_EVENTS);
+        if (request.method === 'GET') return readBlob(env, eventsKey(world), EMPTY_EVENTS);
+        if (request.method === 'POST') return handleWriteWorld(request, env, world, 'events');
       }
     }
 
