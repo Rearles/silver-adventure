@@ -5,7 +5,8 @@ import { GmDossier } from './components/gm-dossier/gm-dossier';
 import { PersonForm } from './components/person-form/person-form';
 import { TimelineView } from './components/timeline-view/timeline-view';
 import { TreeView } from './components/tree-view/tree-view';
-import { saveTextFile } from './services/file-export';
+import { downloadTextFile } from './services/file-export';
+import { SessionService } from './services/session.service';
 import { TimelineDataService } from './services/timeline-data.service';
 import { TreeDataService } from './services/tree-data.service';
 import { ViewModeService } from './services/view-mode.service';
@@ -13,6 +14,14 @@ import { ViewModeService } from './services/view-mode.service';
 /** `null` = closed; `{ id: null }` = adding; `{ id }` = editing that person. */
 interface FormTarget {
   id: string | null;
+}
+
+function postWorld(path: string, body: string, token: string): Promise<Response> {
+  return fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body,
+  });
 }
 
 /**
@@ -37,6 +46,7 @@ export class App {
   private readonly viewMode = inject(ViewModeService);
   private readonly treeData = inject(TreeDataService);
   private readonly timelineData = inject(TimelineDataService);
+  private readonly session = inject(SessionService);
 
   readonly EyeIcon = Eye;
   readonly EyeOffIcon = EyeOff;
@@ -117,27 +127,48 @@ export class App {
   }
 
   async onSaveWorld(): Promise<void> {
-    const peopleOutcome = await saveTextFile(this.treeData.fileName(), this.treeData.serialize());
-    if (peopleOutcome === 'cancelled') {
-      this.statusMessage.set('Save cancelled.');
+    const token = this.session.token();
+    if (token === null) {
+      this.statusMessage.set('Sign in as GM (via the GM View toggle) to save.');
       return;
     }
-    const eventsOutcome = await saveTextFile(
-      this.timelineData.fileName(),
-      this.timelineData.serialize(),
-    );
 
-    this.statusMessage.set(
-      peopleOutcome === 'saved' && eventsOutcome === 'saved'
-        ? 'Saved to disk. Re-run "npm run sync-data" if you saved outside the repo data folder.'
-        : 'Downloaded — move the files over your repo data/ copies.',
-    );
+    const world = this.treeData.world();
+    try {
+      const [peopleRes, eventsRes] = await Promise.all([
+        postWorld(`/api/world/${encodeURIComponent(world)}`, this.treeData.serialize(), token),
+        postWorld(`/api/world/${encodeURIComponent(world)}/events`, this.timelineData.serialize(), token),
+      ]);
+
+      if (peopleRes.status === 401 || eventsRes.status === 401) {
+        this.session.clear();
+        this.statusMessage.set('Your GM session expired — sign in again to save.');
+        return;
+      }
+      if (!peopleRes.ok || !eventsRes.ok) {
+        throw new Error(`people ${peopleRes.status}, events ${eventsRes.status}`);
+      }
+
+      // _dirty on both services clears itself shortly, via the write's own
+      // broadcast looping back over this tab's live WebSocket — no need to
+      // set it here too.
+      this.statusMessage.set('Saved — live for everyone with the link.');
+    } catch (cause) {
+      this.statusMessage.set(cause instanceof Error ? `Save failed: ${cause.message}` : 'Save failed.');
+    }
   }
 
   async onRevert(): Promise<void> {
     await this.treeData.revert();
     await this.timelineData.revert();
-    this.statusMessage.set('Reverted to the files on disk.');
+    this.statusMessage.set('Reverted to the last saved version.');
+  }
+
+  /** A local snapshot, independent of the live store — disaster-recovery copy, not the save path. */
+  onExportBackup(): void {
+    downloadTextFile(this.treeData.fileName(), this.treeData.serialize());
+    downloadTextFile(this.timelineData.fileName(), this.timelineData.serialize());
+    this.statusMessage.set('Downloaded a local backup of the current people and events.');
   }
 
   onDismissStatus(): void {

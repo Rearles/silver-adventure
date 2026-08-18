@@ -86,7 +86,9 @@ function stubFetch(): void {
     'fetch',
     vi.fn(async (input: unknown) => {
       const url = String(input);
-      const body = url.includes('-events') ? worldEvents : worldPeople;
+      // Matches the live API paths (/api/world/:world and /api/world/:world/events),
+      // not the old data/{world}[-events].json static files.
+      const body = url.endsWith('/events') ? worldEvents : worldPeople;
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
