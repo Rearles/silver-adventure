@@ -21,7 +21,11 @@ export type ViewMode = 'gm' | 'player';
  */
 @Injectable({ providedIn: 'root' })
 export class ViewModeService {
-  private readonly _mode = signal<ViewMode>('gm');
+  // Defaults to 'player': a freshly-opened link (the one handed to players)
+  // must land read-only, with no edit affordances or GM dossier instantiated,
+  // before anyone has touched the toggle. The GM flips to 'gm' explicitly
+  // each session when prepping.
+  private readonly _mode = signal<ViewMode>('player');
   /** Current view mode. Change it through `setMode` / `toggleMode`. */
   readonly mode = this._mode.asReadonly();
   readonly isGmView = computed(() => this._mode() === 'gm');
