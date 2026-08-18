@@ -58,7 +58,8 @@
   }
 
   @if (isGmView() && showAddForm()) {
-    <form class="add-form" [formGroup]="addForm" (ngSubmit)="onAddEvent()">
+    <form class="add-form" [formGroup]="addForm" (ngSubmit)="onSubmitEvent()">
+      <h3>{{ formHeading() }}</h3>
       <div class="field">
         <label for="tl-title">Title *</label>
         <input id="tl-title" formControlName="title" />
@@ -274,7 +275,7 @@
         }
       </div>
 
-      <button type="submit" class="btn btn-primary">Add event</button>
+      <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
     </form>
   }
 
@@ -332,6 +333,14 @@
 
               @if (isGmView()) {
                 <div class="event-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    title="Edit event"
+                    (click)="onEditEvent(event)"
+                  >
+                    <lucide-icon [img]="EditIcon" [size]="13" />
+                  </button>
                   <button
                     type="button"
                     class="icon-btn"

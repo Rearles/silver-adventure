@@ -24,7 +24,7 @@ The user's campaign will have events across 3 nations, 3 houses, and "a couple o
 - [x] Update the Add-Event form in timeline-view.ts/html: Start (year required, month/day optional) + End (year, month, day all optional) fields replacing the single Year field, mirroring `PersonForm`'s birth/death date inputs; update event display markup for the date range
 - [x] Add a multi-person picker to the event form for `relatedPersonIds`, reusing `PersonForm`'s search-box-plus-chips pattern (not a flat checklist) so it stays usable as the person pool grows; pre-seed with the tree-selected person if any
 - [x] Add nation/house tag pickers to the event form for `nations`/`houses`: current tags shown as removable chips, with a small "+ add timeline" search/dropdown control (same pattern as the person picker above) rather than every known nation/house rendered as an always-visible toggle — so a GM can explicitly add/remove an event from a timeline independent of `relatedPersonIds` overlap, without the form growing a chip for every nation/house/family in the campaign
-- [ ] Add an "Edit event" action (icon button in `.event-actions`) that pre-fills the form and calls `TimelineDataService.updateEvent` instead of `addEvent`
+- [x] Add an "Edit event" action (icon button in `.event-actions`) that pre-fills the form and calls `TimelineDataService.updateEvent` instead of `addEvent`
 - [ ] Test: date validation (start required, end optional), multi-nation/house filter union + jump/combine behavior, multi-person event linking, and the edit-event flow
 
 ## Notes

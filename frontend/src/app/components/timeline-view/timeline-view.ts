@@ -6,7 +6,7 @@ import {
   type AbstractControl,
   type ValidationErrors,
 } from '@angular/forms';
-import { Eye, EyeOff, LucideAngularModule, Trash2, type LucideIconData } from 'lucide-angular';
+import { Eye, EyeOff, LucideAngularModule, Pencil, Trash2, type LucideIconData } from 'lucide-angular';
 import {
   DYNASTY_EVENT_TYPES,
   type DynastyEvent,
@@ -73,6 +73,7 @@ export class TimelineView {
   readonly EyeIcon = Eye;
   readonly EyeOffIcon = EyeOff;
   readonly TrashIcon = Trash2;
+  readonly EditIcon = Pencil;
 
   iconFor(type: DynastyEventType): LucideIconData {
     return eventIcon(type);
@@ -95,6 +96,11 @@ export class TimelineView {
   readonly error = this.timelineData.error;
 
   readonly showAddForm = signal<boolean>(false);
+  /** `null` while the open form is adding a new event; the event's id while editing an existing one. */
+  readonly editingEventId = signal<string | null>(null);
+  /** "Save changes" when editing, "Add event" when creating — same form, same submit handler either way. */
+  readonly submitLabel = computed<string>(() => (this.editingEventId() === null ? 'Add event' : 'Save changes'));
+  readonly formHeading = computed<string>(() => (this.editingEventId() === null ? 'New event' : 'Edit event'));
 
   /** Held as a signal rather than a form control, mirroring PersonForm's parent/spouse pickers — a search-and-pick chip list. */
   readonly relatedPersonIds = signal<string[]>([]);
@@ -252,6 +258,7 @@ export class TimelineView {
   onToggleAddForm(): void {
     this.showAddForm.update((open) => !open);
     if (this.showAddForm()) {
+      this.editingEventId.set(null);
       const selected = this.selectedPersonId();
       const selectedPerson = selected === null ? undefined : this.treeData.personById(selected);
       // Pre-seeded with the tree-selected person, if any — still just a starting
@@ -278,8 +285,33 @@ export class TimelineView {
     }
   }
 
-  /** A new event is linked to the currently selected person, if there is one. */
-  onAddEvent(): void {
+  /** Opens the same form pre-filled from an existing event, for `onSubmitEvent` to update instead of create. */
+  onEditEvent(event: DynastyEvent): void {
+    this.editingEventId.set(event.id);
+    this.relatedPersonIds.set([...event.relatedPersonIds]);
+    this.personSearch.set('');
+    this.eventNations.set([...event.nations]);
+    this.eventHouses.set([...event.houses]);
+    this.nationTagSearch.set('');
+    this.houseTagSearch.set('');
+    this.addForm.reset({
+      title: event.title,
+      type: event.type,
+      startDay: event.startDay ?? null,
+      startMonth: event.startMonth ?? null,
+      startYear: event.startYear,
+      endDay: event.endDay ?? null,
+      endMonth: event.endMonth ?? null,
+      endYear: event.endYear ?? null,
+      era: event.era ?? '',
+      description: event.description ?? '',
+      visibility: event.visibility,
+    });
+    this.showAddForm.set(true);
+  }
+
+  /** Creates a new event, or updates the one being edited — same form, same validation, same draft shape either way. */
+  onSubmitEvent(): void {
     if (this.addForm.invalid) {
       this.addForm.markAllAsTouched();
       return;
@@ -289,27 +321,42 @@ export class TimelineView {
     // Day/month are precision on top of a year; without a year they are
     // meaningless — mirrors PersonForm's birth/death handling. startYear is
     // always present (required), so start day/month always apply when set.
+    // Optional fields are set to `undefined` rather than omitted: updateEvent
+    // merges the draft onto the existing event, so an *omitted* key would
+    // silently leave a stale value in place instead of clearing it.
     const endDay = value.endYear !== null ? value.endDay : null;
     const endMonth = value.endYear !== null ? value.endMonth : null;
 
-    this.timelineData.addEvent({
+    const draft: Omit<DynastyEvent, 'id'> = {
       title: value.title.trim(),
       type: value.type,
       startYear: value.startYear,
-      ...(value.startMonth !== null ? { startMonth: value.startMonth } : {}),
-      ...(value.startDay !== null ? { startDay: value.startDay } : {}),
-      ...(value.endYear !== null ? { endYear: value.endYear } : {}),
-      ...(endMonth !== null ? { endMonth } : {}),
-      ...(endDay !== null ? { endDay } : {}),
+      startMonth: value.startMonth ?? undefined,
+      startDay: value.startDay ?? undefined,
+      endYear: value.endYear ?? undefined,
+      endMonth: endMonth ?? undefined,
+      endDay: endDay ?? undefined,
       nations: this.eventNations(),
       houses: this.eventHouses(),
       relatedPersonIds: this.relatedPersonIds(),
       visibility: value.visibility,
-      ...(value.era.trim() !== '' ? { era: value.era.trim() } : {}),
-      ...(value.description.trim() !== '' ? { description: value.description.trim() } : {}),
-    });
+      era: value.era.trim() !== '' ? value.era.trim() : undefined,
+      description: value.description.trim() !== '' ? value.description.trim() : undefined,
+    };
 
+    const editingId = this.editingEventId();
+    if (editingId === null) {
+      this.timelineData.addEvent(draft);
+    } else {
+      this.timelineData.updateEvent(editingId, draft);
+    }
+
+    this.closeAddForm();
+  }
+
+  private closeAddForm(): void {
     this.showAddForm.set(false);
+    this.editingEventId.set(null);
     this.relatedPersonIds.set([]);
     this.personSearch.set('');
     this.eventNations.set([]);
