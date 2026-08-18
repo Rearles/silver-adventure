@@ -34,8 +34,8 @@ export class FilterBar {
   readonly totalCount = this.treeData.count;
 
   readonly isFiltered = computed<boolean>(() => {
-    const { nation, house } = this.filter();
-    return nation !== null || house !== null;
+    const { nations, houses } = this.filter();
+    return nations.length > 0 || houses.length > 0;
   });
 
   /** House swatch on the chips, so the chart's colour coding is legible here too. */

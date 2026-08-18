@@ -110,13 +110,22 @@ export class ViewModeService {
     this._filter.set(filter);
   }
 
+  // TODO(rework-event-dates plan, next step): these still replace the whole
+  // selection (old single-select behaviour) rather than the planned
+  // click-to-jump/Ctrl-click-to-combine split — that's the next step's real
+  // work. Kept as single-element arrays for now so FilterBar keeps compiling
+  // and behaving exactly as before against the new array-shaped WorldFilter.
+
   /** Changing nation clears house, since houses are scoped to a nation. */
   setNation(nation: string | null): void {
-    this._filter.set({ nation, house: null });
+    this._filter.set({ nations: nation === null ? [] : [nation], houses: [] });
   }
 
   setHouse(house: string | null): void {
-    this._filter.update((current) => ({ ...current, house }));
+    this._filter.update((current) => ({
+      ...current,
+      houses: house === null ? [] : [house],
+    }));
   }
 
   clearFilter(): void {

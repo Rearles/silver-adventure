@@ -55,20 +55,25 @@ export class App {
   readonly isPlayerPreview = this.viewMode.isPlayerPreview;
   readonly world = this.treeData.world;
 
-  /** "House {name} — Dynasty Ledger" when a house is in focus. */
+  /**
+   * "House {name} — Dynasty Ledger" when exactly one house is in focus.
+   * TODO(rework-event-dates plan, next step): with true multi-select, 2+
+   * houses selected together falls back to the unfiltered title below — how
+   * a combined selection should read is next step's call, not decided here.
+   */
   readonly ledgerTitle = computed<string>(() => {
-    const house = this.viewMode.filter().house;
-    return house === null ? 'Dynasty Ledger' : `House ${house} — Dynasty Ledger`;
+    const houses = this.viewMode.filter().houses;
+    return houses.length === 1 ? `House ${houses[0]} — Dynasty Ledger` : 'Dynasty Ledger';
   });
 
   /**
    * The eyebrow names the nation in focus, or a nation-count summary when
    * unfiltered — never the internal world/file id, which is not meant to be
-   * player- or GM-facing text.
+   * player- or GM-facing text. Same 2+-selected caveat as `ledgerTitle`.
    */
   readonly eyebrow = computed<string>(() => {
-    const nation = this.viewMode.filter().nation;
-    if (nation !== null) return `Kingdom of ${nation}`;
+    const selectedNations = this.viewMode.filter().nations;
+    if (selectedNations.length === 1) return `Kingdom of ${selectedNations[0]}`;
 
     const nations = this.treeData.nations();
     if (nations.length === 0) return '';

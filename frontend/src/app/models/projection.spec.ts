@@ -189,14 +189,14 @@ describe('applyOverlapFilter', () => {
   ];
 
   it('treats everyone as core when no filter is set', () => {
-    const filtered = applyOverlapFilter(pool, { nation: null, house: null });
+    const filtered = applyOverlapFilter(pool, { nations: [], houses: [] });
 
     expect(filtered).toHaveLength(4);
     expect(filtered.every((entry) => entry.tier === 'core')).toBe(true);
   });
 
   it('pulls in an in-married spouse from another house as adjacent, not excluded', () => {
-    const filtered = applyOverlapFilter(pool, { nation: null, house: 'Valcrest' });
+    const filtered = applyOverlapFilter(pool, { nations: [], houses: ['Valcrest'] });
     const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
 
     expect(tiers.get('king')).toBe('core');
@@ -206,7 +206,7 @@ describe('applyOverlapFilter', () => {
   });
 
   it('excludes people with no connection to the filtered set', () => {
-    const filtered = applyOverlapFilter(pool, { nation: null, house: 'Valcrest' });
+    const filtered = applyOverlapFilter(pool, { nations: [], houses: ['Valcrest'] });
 
     expect(filtered.map((entry) => entry.person.id)).not.toContain('stranger');
   });
@@ -217,7 +217,7 @@ describe('applyOverlapFilter', () => {
         person({ id: 'core', house: 'Valcrest' }),
         person({ id: 'outsiderChild', house: 'Ashfell', parentIds: ['core'], generation: 1 }),
       ],
-      { nation: null, house: 'Valcrest' },
+      { nations: [], houses: ['Valcrest'] },
     );
     const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
 
@@ -225,7 +225,7 @@ describe('applyOverlapFilter', () => {
   });
 
   it('applies nation and house together', () => {
-    const filtered = applyOverlapFilter(pool, { nation: 'Meruvia', house: 'Doryne' });
+    const filtered = applyOverlapFilter(pool, { nations: ['Meruvia'], houses: ['Doryne'] });
     const tiers = new Map(filtered.map((entry) => [entry.person.id, entry.tier]));
 
     expect(tiers.get('consort')).toBe('core');
@@ -246,7 +246,7 @@ describe('applyOverlapFilter', () => {
         generation: 1,
       }),
     ]);
-    const filtered = applyOverlapFilter(projected, { nation: null, house: 'Valcrest' });
+    const filtered = applyOverlapFilter(projected, { nations: [], houses: ['Valcrest'] });
 
     expect(filtered.map((entry) => entry.person.id)).toEqual(['king']);
   });

@@ -54,14 +54,12 @@ export class TimelineDataService {
    * Events after the nation/house filter, the year range, and any person
    * selection made in the tree.
    *
-   * The nation/house test mirrors the tree's overlap rule: an event counts if
-   * *any* of its own `nations`/`houses` tags matches *or* if it involves anyone
-   * in the filtered people set, so a cross-house wedding stays on the timeline
-   * for both houses. Range/sort anchor on `startYear` only — `endYear` (when
-   * present) doesn't currently widen the range match.
-   *
-   * `filter.nation`/`filter.house` are still singular here — `WorldFilter`
-   * itself becomes multi-select in a later step of this same plan.
+   * The nation/house test mirrors the tree's overlap rule (union match — see
+   * `WorldFilter`): an event counts if *any* of its own `nations`/`houses` tags
+   * is in the selected sets *or* if it involves anyone in the filtered people
+   * set, so a cross-house wedding stays on the timeline for both houses.
+   * Range/sort anchor on `startYear` only — `endYear` (when present) doesn't
+   * currently widen the range match.
    */
   readonly filteredEvents = computed<DynastyEvent[]>(() => {
     const filter = this.viewMode.filter();
@@ -80,11 +78,11 @@ export class TimelineDataService {
           return false;
         }
 
-        if (filter.nation === null && filter.house === null) return true;
+        if (filter.nations.length === 0 && filter.houses.length === 0) return true;
 
         const ownMatch =
-          (filter.nation === null || event.nations.includes(filter.nation)) &&
-          (filter.house === null || event.houses.includes(filter.house));
+          event.nations.some((nation) => filter.nations.includes(nation)) ||
+          event.houses.some((house) => filter.houses.includes(house));
         if (ownMatch) return true;
 
         return event.relatedPersonIds.some((id) => peopleInScope.has(id));

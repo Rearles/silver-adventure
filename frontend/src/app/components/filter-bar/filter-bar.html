@@ -5,7 +5,7 @@
       <button
         type="button"
         class="chip-btn"
-        [class.active]="filter().nation === null"
+        [class.active]="filter().nations.length === 0"
         (click)="onNationChange('')"
       >
         All
@@ -14,7 +14,7 @@
         <button
           type="button"
           class="chip-btn"
-          [class.active]="filter().nation === nation"
+          [class.active]="filter().nations.includes(nation)"
           (click)="onNationChange(nation)"
         >
           {{ nation }}
@@ -29,7 +29,7 @@
       <button
         type="button"
         class="chip-btn"
-        [class.active]="filter().house === null"
+        [class.active]="filter().houses.length === 0"
         (click)="onHouseChange('')"
       >
         All
@@ -38,7 +38,7 @@
         <button
           type="button"
           class="chip-btn house-chip"
-          [class.active]="filter().house === house"
+          [class.active]="filter().houses.includes(house)"
           [style.--house]="colorFor(house)"
           (click)="onHouseChange(house)"
         >

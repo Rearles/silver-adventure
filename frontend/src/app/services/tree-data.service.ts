@@ -58,9 +58,16 @@ export class TreeDataService {
   );
 
   readonly nations = computed<string[]>(() => collectNations(this.displayPeople()));
-  readonly houses = computed<string[]>(() =>
-    collectHouses(this.displayPeople(), this.viewMode.filter().nation),
-  );
+  /**
+   * Scoped to the selected nation only when exactly one is selected —
+   * `collectHouses` takes a single nation-or-null, so 0 or 2+ selected
+   * nations both fall back to listing every house (unscoped).
+   */
+  readonly houses = computed<string[]>(() => {
+    const selectedNations = this.viewMode.filter().nations;
+    const nation = selectedNations.length === 1 ? selectedNations[0] : null;
+    return collectHouses(this.displayPeople(), nation);
+  });
 
   readonly count = computed<number>(() => this.displayPeople().length);
   readonly hiddenCount = computed<number>(

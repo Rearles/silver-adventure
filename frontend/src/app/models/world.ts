@@ -11,13 +11,20 @@ export interface WorldEventsFile {
   events: DynastyEvent[];
 }
 
-/** Which slice of the flat pool the tree and timeline are currently showing. */
+/**
+ * Which slice of the flat pool the tree and timeline are currently showing.
+ *
+ * Multi-select with **union** semantics: a person/event matches if their
+ * nation is in `nations` *or* their house is in `houses` (empty arrays mean
+ * unfiltered — see `matchesFilter` in projection.ts). This is what lets a GM
+ * view "Nation Asha" and "House Milltree" together as one combined timeline.
+ */
 export interface WorldFilter {
-  nation: string | null;
-  house: string | null;
+  nations: string[];
+  houses: string[];
 }
 
-export const EMPTY_WORLD_FILTER: WorldFilter = { nation: null, house: null };
+export const EMPTY_WORLD_FILTER: WorldFilter = { nations: [], houses: [] };
 
 /** Inclusive year bounds for the timeline. `null` means unbounded. */
 export interface YearRange {

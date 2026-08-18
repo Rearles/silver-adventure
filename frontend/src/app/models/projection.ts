@@ -81,10 +81,15 @@ export interface FilteredPerson<T> {
   tier: FilterTier;
 }
 
+/**
+ * Union match: a person qualifies if their nation is one of `filter.nations`
+ * *or* their house is one of `filter.houses` — not both. Selecting several
+ * nations/houses together is how "combine timelines" works (see `WorldFilter`).
+ * Only called once at least one of the two arrays is non-empty (`applyOverlapFilter`
+ * short-circuits the fully-unfiltered case before reaching here).
+ */
 function matchesFilter(person: PersonLike, filter: WorldFilter): boolean {
-  if (filter.nation !== null && person.nation !== filter.nation) return false;
-  if (filter.house !== null && person.house !== filter.house) return false;
-  return true;
+  return filter.nations.includes(person.nation) || filter.houses.includes(person.house);
 }
 
 /**
@@ -100,7 +105,7 @@ export function applyOverlapFilter<T extends PersonLike>(
   people: readonly T[],
   filter: WorldFilter,
 ): FilteredPerson<T>[] {
-  if (filter.nation === null && filter.house === null) {
+  if (filter.nations.length === 0 && filter.houses.length === 0) {
     return people.map((person) => ({ person, tier: 'core' as const }));
   }
 
