@@ -38,13 +38,86 @@
 
     <div class="row">
       <div class="field">
-        <label for="pf-birth">Birth year</label>
-        <input id="pf-birth" type="number" formControlName="birthYear" />
+        <label for="pf-birth-day">Birth date</label>
+        <div class="date-parts">
+          <input
+            id="pf-birth-day"
+            class="date-day"
+            type="number"
+            formControlName="birthDay"
+            placeholder="DD"
+            aria-label="Birth day"
+          />
+          <span class="date-sep">/</span>
+          <input
+            id="pf-birth-month"
+            class="date-month"
+            type="number"
+            formControlName="birthMonth"
+            placeholder="MM"
+            aria-label="Birth month"
+          />
+          <span class="date-sep">/</span>
+          <input
+            id="pf-birth-year"
+            class="date-year"
+            type="number"
+            formControlName="birthYear"
+            placeholder="YYYY"
+            aria-label="Birth year"
+          />
+        </div>
+        @if (form.controls.birthDay.touched && form.controls.birthDay.invalid) {
+          <span class="error-text">Day must be between 1 and 31.</span>
+        }
+        @if (form.controls.birthMonth.touched && form.controls.birthMonth.invalid) {
+          <span class="error-text">Month must be between 1 and 12.</span>
+        }
       </div>
       <div class="field">
-        <label for="pf-death">Death year</label>
-        <input id="pf-death" type="number" formControlName="deathYear" />
+        <label for="pf-death-day">Death date</label>
+        <div class="date-parts">
+          <input
+            id="pf-death-day"
+            class="date-day"
+            type="number"
+            formControlName="deathDay"
+            placeholder="DD"
+            aria-label="Death day"
+          />
+          <span class="date-sep">/</span>
+          <input
+            id="pf-death-month"
+            class="date-month"
+            type="number"
+            formControlName="deathMonth"
+            placeholder="MM"
+            aria-label="Death month"
+          />
+          <span class="date-sep">/</span>
+          <input
+            id="pf-death-year"
+            class="date-year"
+            type="number"
+            formControlName="deathYear"
+            placeholder="YYYY"
+            aria-label="Death year"
+          />
+        </div>
+        @if (form.controls.deathDay.touched && form.controls.deathDay.invalid) {
+          <span class="error-text">Day must be between 1 and 31.</span>
+        }
+        @if (form.controls.deathMonth.touched && form.controls.deathMonth.invalid) {
+          <span class="error-text">Month must be between 1 and 12.</span>
+        }
       </div>
+    </div>
+
+    @if (form.errors?.['chronology']) {
+      <p class="error-text">Death date cannot precede birth date.</p>
+    }
+
+    <div class="row">
       <div class="field">
         <label for="pf-generation">Generation *</label>
         <input id="pf-generation" type="number" formControlName="generation" />
@@ -54,10 +127,6 @@
         <input id="pf-succession" type="number" formControlName="successionOrder" />
       </div>
     </div>
-
-    @if (form.errors?.['chronology']) {
-      <p class="error-text">Death year cannot precede birth year.</p>
-    }
 
     <label class="check">
       <input type="checkbox" formControlName="isAlive" />

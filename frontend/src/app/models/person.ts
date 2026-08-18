@@ -31,7 +31,13 @@ export interface Person {
   house: string;
   nation: string;
   title?: string;
+  /** Day-of-month and month are optional precision on top of `birthYear`. */
+  birthDay?: number;
+  birthMonth?: number;
   birthYear?: number;
+  /** Day-of-month and month are optional precision on top of `deathYear`. */
+  deathDay?: number;
+  deathMonth?: number;
   deathYear?: number;
   isAlive: boolean;
   /** 0–2 entries. */
