@@ -9,7 +9,8 @@
     "prebuild": "npm run sync-data",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:worker": "cd worker && vitest run"
   },
   "private": true,
   "packageManager": "npm@10.9.7",

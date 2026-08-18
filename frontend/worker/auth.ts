@@ -1,5 +1,8 @@
 import type { Env } from './env';
 
+/** Only what these functions actually touch — narrower than the full `Env` so tests don't need fake R2/DO bindings. */
+type AuthEnv = Pick<Env, 'GM_PASSWORD' | 'SESSION_SECRET'>;
+
 /** Long enough to cover a game session without the GM re-entering the password mid-table. */
 const TOKEN_TTL_SECONDS = 60 * 60 * 12;
 
@@ -30,7 +33,7 @@ function hmacKey(secret: string): Promise<CryptoKey> {
 }
 
 /** Issues `<payload>.<signature>`, both base64url, over a small JSON payload carrying only an expiry. */
-export async function issueSessionToken(env: Env): Promise<string> {
+export async function issueSessionToken(env: AuthEnv): Promise<string> {
   const payload: TokenPayload = { exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS };
   const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
   const key = await hmacKey(env.SESSION_SECRET);
@@ -39,7 +42,7 @@ export async function issueSessionToken(env: Env): Promise<string> {
 }
 
 /** True only for a token whose signature verifies against SESSION_SECRET and hasn't expired. */
-export async function verifySessionToken(token: string, env: Env): Promise<boolean> {
+export async function verifySessionToken(token: string, env: AuthEnv): Promise<boolean> {
   const [payloadPart, signaturePart] = token.split('.');
   if (payloadPart === undefined || signaturePart === undefined) return false;
 
@@ -69,7 +72,7 @@ export async function verifySessionToken(token: string, env: Env): Promise<boole
  * XOR-compare the digests, rather than a naive `===` on the raw password
  * (which leaks timing information proportional to the matching prefix).
  */
-export async function checkPassword(candidate: string, env: Env): Promise<boolean> {
+export async function checkPassword(candidate: string, env: AuthEnv): Promise<boolean> {
   if (candidate.length === 0) return false;
   const key = await hmacKey(env.SESSION_SECRET);
   const [candidateDigest, actualDigest] = await Promise.all([

@@ -2,7 +2,7 @@
 title: "Add a Cloudflare Worker backend for live, real-time GM edits and real password-gated GM View"
 type: "feature"
 created: "2026-08-18"
-status: in-progress
+status: complete
 related: ["add-inline-person-creation-for-parent-child-spouse-relationships_22551bcf.plan.md"]
 ---
 
@@ -27,7 +27,7 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 - [x] Gate the `gm` transition in `ViewModeService.setMode`/`toggleMode` behind a password prompt + valid session token
 - [x] Seed R2 from `data/world.json` and `data/world-events.json` via a one-time script or `wrangler r2 object put`
 - [x] Update README.md — document the live-API architecture; mark git data flow as seed-only
-- [ ] Test Worker auth/read/write/broadcast logic (new `frontend/worker/*.spec.ts`, Miniflare-based)
+- [x] Test Worker auth/read/write/broadcast logic (new `frontend/worker/*.spec.ts`, Miniflare-based) — see Notes: resolved via live integration testing, not Miniflare
 
 ## Notes
 
@@ -43,7 +43,11 @@ The deployed site (frontend/wrangler.jsonc, project "age-of-aether-campaign") is
 
 **Testing approach:** no existing Worker/backend test setup in this repo. Use Miniflare (via `wrangler`'s built-in local dev/test support, or `@cloudflare/vitest-pool-workers` since the frontend already uses Vitest) to exercise auth token issuance/verification, the R2 read/write round trip, and DO broadcast fan-out, without needing a real deployed Worker.
 
-**Local runtime constraint discovered mid-implementation:** the actual Workers runtime binary (`workerd`, used by both `wrangler dev` and Miniflare/`@cloudflare/vitest-pool-workers`) refuses to start on this dev machine — macOS 12.6.0, below workerd's 13.5.0 minimum. `wrangler deploy --dry-run` still works (bundling/config validation only, no runtime needed) and is what's being used per-todo for verification instead. Todo 14 (the formal test step) will need a real decision: test against an actual deployed Worker instead of local Miniflare, get the dev machine's OS updated, or run the test suite somewhere else (CI). Revisit at that todo.
+**Local runtime constraint — resolution.** As flagged after todo 4: the actual Workers runtime binary (`workerd`, used by both `wrangler dev` and Miniflare/`@cloudflare/vitest-pool-workers`) refuses to start on this dev machine (macOS 12.6.0, below workerd's 13.5.0 minimum), so `wrangler deploy --dry-run` (bundling/config validation only) stood in for per-todo verification throughout. Todo 14 resolved this two ways rather than picking one:
+1. **`frontend/worker/auth.spec.ts` + `frontend/worker/vitest.config.ts`** (`npm run test:worker`, from `frontend/`) — real, locally-runnable Vitest coverage for `auth.ts` specifically, since it has no `cloudflare:workers` import and needs no Workers runtime at all (proven back at todo 5's ad-hoc version of the same check). 8 tests, genuinely executing, not just typechecked.
+2. **Live integration testing against the real deployed Worker** for everything that *does* need the runtime (routing, R2, the DO's WebSocket relay) — `wrangler deploy` for real (not dry-run) against `age-of-aether-campaign`, then exercised over HTTPS/WSS using a throwaway `smoke-test-world` id (never touching the real `world` data, deleted from R2 afterward): static site still serves (200), unseeded-world empty fallback, wrong/correct password against `/api/auth` (401/200+token), unauthenticated write rejected (401), malformed-shape write rejected (400), authenticated write succeeds and a subsequent GET reflects it, and — the actual point of this whole plan — a client connected via WebSocket received a real broadcast within the same request/response cycle as a separate client's write. All passed. This is arguably *better* proof than a Miniflare unit test would have been (it's the real deployed thing, not a simulation), at the cost of not being repeatable in CI the way a committed spec is — a tradeoff worth knowing about if this ever needs re-verifying without a live GM password on hand.
+
+No `index.spec.ts` / `world-room.spec.ts` exist as a result — deliberate, not an oversight; see point 2.
 
 **Sequencing risk:** this migrates the durable source of truth off git entirely, which is a bigger blast radius than a typical feature. Treat "R2 has a verified good copy before the old save path is removed" and "the old save/download path is fully replaced, not left half-working" as hard gates — don't delete `file-export.ts`'s write path until the new authenticated write path is proven end-to-end against the deployed Worker.
 
